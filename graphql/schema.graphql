@@ -129,10 +129,10 @@ input ListingHostInput {
 }
 
 input ListingImagesInput {
-  medium_url: String!
-  picture_url: String!
-  thumbnail_url: String!
-  xl_picture_url: String!
+  medium_url: String
+  picture_url: String
+  thumbnail_url: String
+  xl_picture_url: String
 }
 
 input ListingInput {
@@ -146,12 +146,12 @@ input ListingInput {
   bedrooms: Int
   beds: Int
   calendar_last_scraped: DateTime
-  cancellation_policy: String!
+  cancellation_policy: String
   cleaning_fee: Float
-  description: String!
-  extra_people: Float!
+  description: String
+  extra_people: Float
   first_review: DateTime
-  guests_included: Float!
+  guests_included: Float
   host: ListingHostInput
   house_rules: String
   id: String
@@ -202,7 +202,7 @@ input ListingReviewScoresInput {
 
 type ListingReviews {
   comments: String
-  date: DateTime!
+  date: DateTime
   id: String!
   listing_id: String!
   reviewer_id: String!
@@ -211,10 +211,10 @@ type ListingReviews {
 
 input ListingReviewsInput {
   comments: String
-  date: DateTime!
-  id: String!
-  listing_id: String!
-  reviewer_id: String!
+  date: DateTime
+  id: String
+  listing_id: String
+  reviewer_id: String
   reviewer_name: String
 }
 
@@ -244,8 +244,8 @@ type PageInfo {
 }
 
 type Query {
-  listing(query: ListingInput): Listing
-  listings(after: String, first: Int): Response
+  listing(query: ListingInput!): Listing
+  listings(after: String, first: Int, query: ListingInput): Response
 }
 
 type Response {

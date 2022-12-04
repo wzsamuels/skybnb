@@ -1,10 +1,13 @@
-import {ReactNode} from "react";
+import {ComponentPropsWithoutRef, ReactNode} from "react";
 
-const Layout = ({children} : {children: ReactNode}) => {
+interface Props extends ComponentPropsWithoutRef<"div"> {
+  children: ReactNode
+}
+const Layout = ({children, className, ...rest} : Props)  => {
   return (
-    <div>
+    <div className={className} {...rest}>
       <nav className={'h-[50px] border-b-2 border-gray-400'}>
-        SkyBnB
+        <button>Filter</button>
       </nav>
       <main>
         {children}
