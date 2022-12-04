@@ -138,6 +138,7 @@ export default function Home() {
   if (error) return <p>Oh no... {error.message}</p>
   if (data) { console.log(data) }
 
+  // @ts-ignore
   return (
     <div>
       <Head>
