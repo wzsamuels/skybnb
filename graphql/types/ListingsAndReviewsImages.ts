@@ -13,9 +13,9 @@ export const ListingImages = objectType({
 export const ListingImagesInput = inputObjectType({
   name: 'ListingImagesInput',
   definition(t) {
-    t.nonNull.string('medium_url')
-    t.nonNull.string('picture_url')
-    t.nonNull.string('thumbnail_url')
-    t.nonNull.string('xl_picture_url')
+    t.string('medium_url')
+    t.string('picture_url')
+    t.string('thumbnail_url')
+    t.string('xl_picture_url')
   }
 })

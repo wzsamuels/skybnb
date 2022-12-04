@@ -1,4 +1,4 @@
-import {extendType, inputObjectType, intArg, objectType, queryField, stringArg} from "nexus";
+import {extendType, inputObjectType, intArg, nonNull, objectType, queryField, stringArg} from "nexus";
 import {ListingAddress, ListingAddressInput} from "./ListingsAndReviewsAddress";
 import {ListingAvailability, ListingAvailabilityInput} from "./ListingsAndReviewsAvailability";
 import {ListingHost, ListingHostInput} from "./ListingsAndReviewsHost";
@@ -55,6 +55,7 @@ export const Listing = objectType({
   }
 })
 
+/** Listing Input Type for queries. All fields are optional. **/
 export const ListingInput = inputObjectType({
   name: 'ListingInput',
   definition(t) {
@@ -70,12 +71,12 @@ export const ListingInput = inputObjectType({
     t.int('bedrooms')
     t.int('beds')
     t.datetime('calendar_last_scraped')
-    t.nonNull.string('cancellation_policy')
+    t.string('cancellation_policy')
     t.float('cleaning_fee')
-    t.nonNull.string('description')
-    t.nonNull.float('extra_people')
+    t.string('description')
+    t.float('extra_people')
     t.datetime('first_review')
-    t.nonNull.float('guests_included')
+    t.float('guests_included')
     t.field('host', {type: ListingHostInput})
     t.string('house_rules')
     t.field('images', {type: ListingImagesInput})
@@ -106,12 +107,19 @@ export const ListingInput = inputObjectType({
 
 export const ListingQuery = queryField('listing', {
   type: 'Listing',
-  args: { query: ListingInput},
+  args: { query: nonNull(ListingInput)},
   resolve(_parent, args, ctx) {
-    return ctx.prisma.listingsAndReviews.findUnique({
-      where: {
-        id: args.query?.id
+    let queryOptions = {
+        where : {
+          ...(args.query?.id && { id: args.query.id}),
+          ...(args.query?.address && {
+            address: { is: {
+                ...(args.query.address.country && {country: args.query.address.country})}}})
+        }
       }
+
+    return ctx.prisma.listingsAndReviews.findUnique({
+      ...queryOptions
     })
   }
 })
@@ -124,43 +132,66 @@ export const ListingsQuery = extendType({
       args: {
         first: intArg(),
         after: stringArg(),
+        query: ListingInput
       },
       async resolve(_, args, ctx) {
         let queryResults = null;
+        let queryOptions = {};
+        const takeCount = args.first ? args.first : 50;
+
+        if(args.query) {
+          queryOptions = {
+            take: takeCount,
+            where : {
+              ...(args.query.id && { id: args.query.id}),
+              ...(args.query.address && {
+                address: {
+                  is: {
+                    ...(args.query.address.country && {country: args.query.address.country}),
+                    ...(args.query.address.street && {street: args.query.address.street}),
+                  }
+                }
+              }),
+              ...(args.query.property_type && { property_type: args.query.property_type}),
+            }
+          }
+        }
+        else {
+          queryOptions = { take: args.first ? args.first : 50 };
+        }
 
         if(args.after) {
           queryResults = await ctx.prisma.listingsAndReviews.findMany({
-            take: args.first,
             skip: 1,
             cursor: {
               id: args.after,
             },
+            ...queryOptions
           })
         } else {
           queryResults = await ctx.prisma.listingsAndReviews.findMany({
-            take: args.first
+            ...queryOptions
           })
         }
         if(queryResults.length > 0) {
           const lastInResults = queryResults[queryResults.length - 1];
           const cursor = lastInResults.id
           const secondResults = await ctx.prisma.listingsAndReviews.findMany({
-            take: args.first,
             cursor: {
               id: cursor
             },
+            ...queryOptions
           })
-          const result = {
+          return {
             pageInfo: {
               endCursor: cursor,
-              hasNextPage: secondResults.length >= args.first
+              hasNextPage: secondResults.length >= takeCount
             },
             edges: queryResults.map(listing => ({
               cursor: listing.id,
               node: listing
             }))
           }
-          return result
         }
         return {
           pageInfo: {

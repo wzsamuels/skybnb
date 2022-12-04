@@ -5,7 +5,7 @@ export const ListingReviews = objectType({
   definition(t) {
     t.nonNull.string('id')
     t.string('comments')
-    t.nonNull.datetime('date')
+    t.datetime('date')
     t.nonNull.string('listing_id')
     t.nonNull.string('reviewer_id')
     t.string('reviewer_name')
@@ -15,11 +15,11 @@ export const ListingReviews = objectType({
 export const ListingReviewsInput = inputObjectType({
   name: 'ListingReviewsInput',
   definition(t) {
-    t.nonNull.string('id')
+    t.string('id')
     t.string('comments')
-    t.nonNull.datetime('date')
-    t.nonNull.string('listing_id')
-    t.nonNull.string('reviewer_id')
+    t.datetime('date')
+    t.string('listing_id')
+    t.string('reviewer_id')
     t.string('reviewer_name')
   }
 })
