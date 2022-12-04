@@ -8,6 +8,9 @@ const nextConfig = {
         hostname: 'a0.muscache.com'
       }
     ]
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   }
 }
 
