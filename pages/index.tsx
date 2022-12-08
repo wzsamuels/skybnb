@@ -2,17 +2,18 @@ import Head from 'next/head'
 import Image from 'next/image'
 
 import { gql, useQuery } from '@apollo/client'
-import {createRef, useCallback, useEffect, useRef, useState} from "react";
+import { useCallback, useEffect, useRef, useState} from "react";
 import {useBottomScrollListener} from "react-bottom-scroll-listener";
 import {StarIcon} from "@heroicons/react/20/solid";
 import {HeartIcon} from "@heroicons/react/24/outline";
 import {BiBuildingHouse, BiHotel} from "react-icons/bi";
 import {BsBuilding, BsChevronLeft, BsChevronRight, BsHouseDoor, BsLadder} from "react-icons/bs";
-import {MdAccountCircle, MdApartment, MdCabin, MdOutlineFreeBreakfast} from "react-icons/md";
+import { MdApartment, MdCabin, MdOutlineFreeBreakfast} from "react-icons/md";
 import {RiSailboatLine} from "react-icons/ri";
 import {GiBarn, GiBunkBeds, GiCampfire, GiCaravan, GiCastle, GiFarmTractor, GiTreehouse} from "react-icons/gi";
-import apolloClient from "../lib/apollo";
-import {IoEarthSharp, IoMenuSharp} from "react-icons/io5";
+import {IoEarthSharp} from "react-icons/io5";
+import Link from "next/link";
+import NavBar from "../components/NavBar";
 
 const icons = [
   {
@@ -158,7 +159,7 @@ export default function Home() {
 
   const handlePropertyClick = (type: String) => {
     setFilter({...filter, property_type: type});
-    apolloClient.resetStore()
+
   }
 
   if (error) return <p>Oh no... {error.message}</p>
@@ -171,14 +172,8 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <header className={'pb-4 sticky top-0 z-10 bg-light overflow-x-hidden shadow-lg'}>
-        <div className={'flex justify-between items-center px-4'}>
-          <span className={'px-4 py-2 bg-primary text-light my-2 rounded-3xl'}>SkyBnB</span>
-          <button className={'flex h-8 px-1 items-center border border-dark rounded-3xl opacity-70 hover:opacity-100'}>
-            <IoMenuSharp className={'w-6 h-6 mr-2'}/>
-            <MdAccountCircle className={'w-6 h-6'}/>
-          </button>
-        </div>
+      <header className={'pb-4 sticky top-0 z-10 bg-light  shadow-lg'}>
+        <NavBar/>
         <hr/>
       <PropertyTypeFilter onFilterSelect={handlePropertyClick}/>
       </header>
@@ -192,9 +187,9 @@ export default function Home() {
         </div>
       }
 
-      <div className={'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4'}>
+      <div className={'grid mx-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4'}>
         {data?.listings.edges.map((listing) =>
-          <div key={listing.node.id} className={'relative w-full h-full max-w-[350px] m-auto'}>
+          <Link href={`/rooms/${listing.node.id}`} key={listing.node.id} className={'relative w-full h-full max-w-[350px] m-auto'}>
             <div className={'aspect-square '}>
               <Image className={'rounded-md w-full h-full object-cover'} src={listing.node.images.picture_url} width={500} height={500}
                      alt={''}/>
@@ -215,7 +210,7 @@ export default function Home() {
             </div>
             <p>{listing.node.property_type}</p>
             <p>${listing.node.price}</p>
-          </div>
+          </Link>
         )}
       </div>
     </div>
