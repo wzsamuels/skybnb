@@ -14,5 +14,5 @@ module.exports = {
       }
     },
   },
-  plugins: [require('@tailwindcss/forms'),require('tw-elements/dist/plugin')],
+  plugins: [require('@tailwindcss/forms'),require('tw-elements/dist/plugin'), require('@tailwindcss/line-clamp')],
 }
