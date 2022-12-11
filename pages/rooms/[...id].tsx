@@ -109,7 +109,13 @@ export async function getServerSideProps(ctx: { params: { id: string; }; }) {
   };
 }
 
-const Listing = ({listing, amenities, error}) => {
+const Listing = ({listing, amenities}) => {
+  const router = useRouter()
+  const {id} = router.query
+  console.log(`Id: ${id}, Id[0]: ${id[0]}`);
+  const {data, error, loading} = useQuery(GetListing, {variables: {query: {id: id[0] || id}}})
+
+  //const [listing, setListing] = useState()
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const openReviewDialog = () => setShowReviewDialog(true);
   const closeReviewDialog = () => setShowReviewDialog(false);
@@ -121,7 +127,11 @@ const Listing = ({listing, amenities, error}) => {
     zoom: 11
   };
 
-  if(error) return <h1 className={'text-3xl'}>Error Loading Listing</h1>
+  if(error) {
+    console.error(`Error ${error}`);
+    return <h1 className={'text-3xl'}>Error Loading Listing</h1>
+  }
+
   const getIcon = (amenity = "") => {
     if(amenity.includes("translation missing")) {
       return null;

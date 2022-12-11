@@ -1,11 +1,9 @@
 import {IoMenuSharp} from "react-icons/io5";
 import {MdAccountCircle} from "react-icons/md";
-import {useUser} from "@auth0/nextjs-auth0/client";
 import Link from "next/link";
 import {ComponentPropsWithoutRef} from "react";
 
 const NavBar = ({className} : ComponentPropsWithoutRef<"div">) => {
-  const {user} = useUser()
 
   return (
     <div className={`flex justify-between items-center px-4 ${className}`}>
