@@ -6,6 +6,12 @@ const nextConfig = {
     remotePatterns: [
       {
         hostname: 'a0.muscache.com'
+      },
+      {
+        hostname: 'thispersondoesnotexist.com'
+      },
+      {
+        hostname: 'images.unsplash.com'
       }
     ]
   },
