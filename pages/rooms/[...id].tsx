@@ -70,6 +70,9 @@ const GetListing = gql`
           description
           summary
           space
+          price
+          monthly_price
+          weekly_price
           neighborhood_overview
           property_type
           guests_included
@@ -152,10 +155,15 @@ const Listing = ({listing,amenities,error, roomImages}) => {
             <div>
               <h1 className={'text-3xl pt-6 '}>{listing.name}</h1>
               <div className={'flex items-center mt-2'}>
-                <AiFillStar className={'mr-1 w-4 h-4'}/>
-                {(listing.review_scores.review_scores_rating / 100 * 5).toFixed(1)}
-                <span className={'font-bold px-1'}>·</span>
-                <span>{listing.reviews.length} reviews</span>
+                { listing.number_of_reviews ?
+                  <>
+                    <AiFillStar className={'mr-1 w-4 h-4'}/>
+                    {(listing.review_scores.review_scores_rating / 100 * 5).toFixed(1)}
+                    <span className={'font-bold px-1'}>·</span>
+                  </>
+                  : null
+                }
+                <span>{listing.number_of_reviews} reviews</span>
                 <span className={'font-bold px-1'}>·</span>
                 { listing.host_is_superhost &&
                   <span>
@@ -178,7 +186,7 @@ const Listing = ({listing,amenities,error, roomImages}) => {
           </div>
 
           <div className={'flex gap-4'}>
-            <div className={'w-2/3'}>
+            <div className={'w-full md:w-2/3'}>
               <div className={'flex justify-between py-6 md:pt-8'}>
                 <div>
                   <div>{listing.property_type} hosted by {listing.host.host_name}</div>
@@ -203,13 +211,15 @@ const Listing = ({listing,amenities,error, roomImages}) => {
               </section>
 
               <section className={'border-t border-gray-300 py-6 md:py-8'}>
-                {listing.summary}
+                <p>{listing.summary}</p>
                 <button className={'underline'}>Learn more</button>
               </section>
             </div>
             <div className={'hidden w-1/3 md:block'}>
               <div className={'rounded-xl shadow border border-gray-300 p-6'}>
-                ${listing.price} night
+                <p className={'text-lg font-bold'}>${listing.price} / night</p>
+                <p>${listing.weekly_price} / week</p>
+                <p>${listing.monthly_price} / month</p>
               </div>
             </div>
           </div>

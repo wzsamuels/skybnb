@@ -172,7 +172,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <header className={'pb-4 sticky top-0 z-10 bg-light  shadow-lg'}>
+      <header className={'pb-4 sticky top-0 z-10 bg-white  shadow-lg'}>
         <NavBar/>
         <hr/>
       <PropertyTypeFilter onFilterSelect={handlePropertyClick}/>
@@ -253,7 +253,7 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
 
   return (
     <div className={'flex pl-4 relative '}>
-      <div onScroll={handleScroll} className={'flex scroll-smooth overflow-hidden items-center gap-12 bg-light relative transition-all'} ref={scrollDiv}>
+      <div onScroll={handleScroll} className={'flex scroll-smooth overflow-hidden items-center gap-12 bg-white relative transition-all'} ref={scrollDiv}>
         {icons.map(icon =>
           <button
             key={icon.text} onClick={() => onFilterSelect(icon.type)} className={'flex flex-col items-center opacity-70 hover:opacity-100'}>
@@ -264,14 +264,14 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
       </div>
       {
         scrollCount > 0 &&
-        <div className={'absolute w-auto h-full bg-light z-20 flex justify-end items-center left-0'}>
+        <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center left-0'}>
           <button onClick={() => handlePropertyScrolled("left")}
                   className={'rounded-full border border-dark p-1 mx-4 opacity-70 hover:opacity-100'}>
             <BsChevronLeft/>
           </button>
         </div>
       }
-      <div className={'absolute w-auto h-full bg-light z-20 flex justify-end items-center right-0'}>
+      <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center right-0'}>
         <button onClick={() => handlePropertyScrolled("right")}
                 className={'rounded-full border border-dark p-1 mx-4 opacity-70 hover:opacity-100'}>
           <BsChevronRight/>
