@@ -172,7 +172,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <header className={'pb-4 sticky top-0 z-10 bg-white  shadow-lg'}>
+      <header className={'sticky top-0 z-10 bg-white  shadow-lg'}>
         <NavBar/>
         <hr/>
       <PropertyTypeFilter onFilterSelect={handlePropertyClick}/>
@@ -253,7 +253,7 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
 
   return (
     <div className={'flex pl-4 relative '}>
-      <div onScroll={handleScroll} className={'flex scroll-smooth overflow-hidden items-center gap-12 bg-white relative transition-all'} ref={scrollDiv}>
+      <div onScroll={handleScroll} className={'flex py-2 scroll-smooth overflow-hidden items-center gap-12 bg-white relative transition-all'} ref={scrollDiv}>
         {icons.map(icon =>
           <button
             key={icon.text} onClick={() => onFilterSelect(icon.type)} className={'flex flex-col items-center opacity-70 hover:opacity-100'}>

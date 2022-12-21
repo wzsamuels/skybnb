@@ -20,7 +20,7 @@ import {
   FaWater, FaWheelchair
 } from "react-icons/fa"
 import {
-  GiArchiveRegister, GiChickenOven,
+  GiArchiveRegister, GiCat, GiChickenOven,
   GiCookingPot,
   GiCooler,
   GiHeatHaze, GiKnifeFork,
@@ -56,60 +56,69 @@ import apolloClient from "../../lib/apollo";
 import ProgressBar from "../../components/Progress";
 import {StarIcon} from "@heroicons/react/20/solid";
 import Modal from "../../components/Modal";
+import GoogleMap from "../../components/GoogleMap";
+
 const GetListing = gql`
   query GetListing($query: ListingInput!) {
-      listing(query: $query) {
-          id
-          bathrooms
-          bedrooms
-          beds
-          bed_type
-          number_of_reviews
-          name
-          accommodates
-          description
-          summary
-          space
-          price
-          monthly_price
-          weekly_price
-          neighborhood_overview
-          property_type
-          guests_included
-          host {
-            host_name
-            host_is_superhost
-          }
-          images {
-              picture_url
-          }
-          reviews {
-              comments
-              date
-              id
-              listing_id
-              reviewer_id
-              reviewer_name
-          }
-          review_scores {
-              review_scores_accuracy
-              review_scores_checkin
-              review_scores_cleanliness
-              review_scores_communication
-              review_scores_location
-              review_scores_rating
-              review_scores_value
-          }
-          address {
-            street
-            location {
-              type
-              coordinates
-            }
-          }
-          room_type
-          amenities
+    listing(query: $query) {
+      id
+      bathrooms
+      bedrooms
+      beds
+      bed_type
+      number_of_reviews
+      name      
+      summary
+      space
+      description
+      neighborhood_overview
+      notes
+      transit
+      access
+      house_rules
+      accommodates
+      price
+      monthly_price
+      weekly_price
+      property_type
+      guests_included
+      host {
+        host_name
+        host_about
+        host_response_time
+        host_response_rate
+        host_is_superhost
       }
+      images {
+          picture_url
+      }
+      reviews {
+          comments
+          date
+          id
+          listing_id
+          reviewer_id
+          reviewer_name
+      }
+      review_scores {
+          review_scores_accuracy
+          review_scores_checkin
+          review_scores_cleanliness
+          review_scores_communication
+          review_scores_location
+          review_scores_rating
+          review_scores_value
+      }
+      address {
+        street
+        location {
+          type
+          coordinates
+        }
+      }
+      room_type
+      amenities
+    }
   }
 `
 
@@ -140,6 +149,18 @@ const Listing = ({listing,amenities,error, roomImages}) => {
   const openReviewDialog = () => setShowReviewDialog(true);
   const closeReviewDialog = () => setShowReviewDialog(false);
 
+  const [showAmenityModal, setShowAmenityModal] = useState(false);
+  const openAmenityModal = () => setShowAmenityModal(true);
+  const closeAmenityModal = () => setShowAmenityModal(false);
+
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+  const openDescriptionModal = () => setShowDescriptionModal(true);
+  const closeDescriptionModal = () => setShowDescriptionModal(false);
+
+  const [showNeighborhoodModal, setShowNeighborhoodModal] = useState(false);
+  const openNeighborhoodModal = () => setShowNeighborhoodModal(true);
+  const closeNeighborhoodModal = () => setShowNeighborhoodModal(false);
+
   if(error) {
     console.error(`Error ${error}`);
     return <h1 className={'text-3xl'}>Error Loading Listing. Error details logged to console.</h1>
@@ -150,7 +171,7 @@ const Listing = ({listing,amenities,error, roomImages}) => {
     <>
       <NavBar className={'shadow'}/>
       <div className={'flex justify-center w-full'}>
-        <div className={'w-full max-w-[1080px] px-4'}>
+        <div className={'w-full max-w-[1080px] px-6'}>
           <div className={'flex flex-col-reverse md:flex-col'}>
             <div>
               <h1 className={'text-3xl pt-6 '}>{listing.name}</h1>
@@ -174,19 +195,19 @@ const Listing = ({listing,amenities,error, roomImages}) => {
                 <span className={'underline'}>{listing.address.street}</span>
               </div>
             </div>
-            <div className={'grid grid-cols-4 grid-rows-2 gap-2 pt-6'}>
-              <Image className={'rounded-l-xl col-span-2 row-span-2 w-full h-full object-cover'} src={listing.images.picture_url} width={560} height={560} alt={''}/>
+            <div className={'grid grid-cols-1 grid-rows-1 sm:grid-cols-4 sm:grid-rows-2 gap-2 pt-6'}>
+              <Image className={'rounded-xl sm:rounded-r-none sm:rounded-l-xl col-span-2 row-span-2 w-full h-full object-cover'} src={listing.images.picture_url} width={560} height={560} alt={''}/>
               { roomImages && roomImages.map((roomImage, index) =>
                 <Image
                   key={roomImage.id}
-                  className={`w-full h-full object-cover aspect-square ${index === 1 && "rounded-tr-xl"} ${index === 3 && "rounded-br-xl"}`}
+                  className={`hidden sm:block w-full h-full object-cover aspect-square ${index === 1 && "rounded-tr-xl"} ${index === 3 && "rounded-br-xl"}`}
                   src={roomImage.urls.regular} width={300} height={300} alt={''}/>
               )}
             </div>
           </div>
 
-          <div className={'flex gap-4'}>
-            <div className={'w-full md:w-2/3'}>
+          <div className={'flex justify-between'}>
+            <div className={'w-full md:w-7/12'}>
               <div className={'flex justify-between py-6 md:pt-8'}>
                 <div>
                   <div>{listing.property_type} hosted by {listing.host.host_name}</div>
@@ -197,29 +218,41 @@ const Listing = ({listing,amenities,error, roomImages}) => {
                 <Image className={'rounded-full'} src={'https://thispersondoesnotexist.com/image'} width={56} height={56} alt={'AI Generated Host Image'}/>
               </div>
 
-              <section className={'border-t border-gray-300 py-6 md:py-8'}>
+              <section className={'border-t border-gray-300 py-6 md:py-8 w-full'}>
                 <h2 className={'text-xl font-bold pb-4'}>Amenities</h2>
                 <ul className={'grid grid-cols-2 gap-2'}>
-                  { amenities.map((item) => {
-                    let Icon = getIcon(item);
-                    if(Icon) {
-                      return <li className={'flex'} key={item}><Icon className={'w-6 h-6'}/>{item}</li>
+                  { amenities.map((item, index) => {
+                    if(index < 8) {
+                      let Icon = getIcon(item);
+                      if (Icon) {
+                        return <li className={'flex'} key={item}><Icon className={'w-6 h-6'}/>{item}</li>
+                      }
                     }
                     return null;
                   })}
                 </ul>
+                { amenities.length > 8 ?
+                    <button className={'border border-black rounded px-4 py-2 mt-6 w-full sm:w-auto'} onClick={openAmenityModal}>Show all {amenities.length} amenities</button>
+                  : null
+                }
+
               </section>
 
               <section className={'border-t border-gray-300 py-6 md:py-8'}>
-                <p>{listing.summary}</p>
-                <button className={'underline'}>Learn more</button>
+                {listing.summary ?
+                  <p>{listing.summary}</p>
+                  :
+                  <p>{listing.description}</p>
+                }
+                <button onClick={openDescriptionModal} className={'underline'}>Learn more</button>
               </section>
             </div>
             <div className={'hidden w-1/3 md:block'}>
-              <div className={'rounded-xl shadow border border-gray-300 p-6'}>
+              <div className={'ml-[8%] rounded-xl sticky top-0 shadow border border-gray-300 p-6'}>
                 <p className={'text-lg font-bold'}>${listing.price} / night</p>
                 <p>${listing.weekly_price} / week</p>
                 <p>${listing.monthly_price} / month</p>
+                <button className={'py-2 px-4 rounded-xl bg-primary text-light'}>Reserve</button>
               </div>
             </div>
           </div>
@@ -231,7 +264,7 @@ const Listing = ({listing,amenities,error, roomImages}) => {
                 {(listing.review_scores.review_scores_rating / 100 * 5).toFixed(1)}
                 {' '}·{' '}{listing.reviews.length} reviews
               </h2>
-              <div className={'grid grid-cols-2 gap-2'}>
+              <div className={'grid grid-cols-1 md:grid-cols-2 gap-2'}>
                 <div className={'flex items-center justify-between'}>
                   <div className={'basis-auto'}>Cleanliness</div>
                   <div className={'min-w-auto basis-[50%] items-center flex'}>
@@ -296,14 +329,16 @@ const Listing = ({listing,amenities,error, roomImages}) => {
             </section>
           }
           <section className={'border-t border-gray-300 py-6 md:py-8'}>
-            <h2 className={'text-xl'}>Where you&apos;ll be</h2>
-            <h3 className={'font-bold'}>{listing.address.street}</h3>
-            <p>{listing.neighborhood_overview}</p>
-            <p>{listing.space}</p>
+            <h2 className={'text-xl my-4'}>Where you&apos;ll be</h2>
+            <GoogleMap lat={listing.address.location.coordinates[1]} lang={listing.address.location.coordinates[0]}/>
+            <h3 className={'font-bold my-4'}>{listing.address.street}</h3>
+            <p className={'line-clamp-3'}>{listing.neighborhood_overview}</p>
+            <button onClick={openNeighborhoodModal} className={'underline my-4'}>Learn More</button>
           </section>
           <section>
-            <div>
-              <Image className={'rounded-full'} src={'https://thispersondoesnotexist.com/image'} width={56} height={56} alt={'AI Generated Host Image'}/>
+            <div className={'flex'}>
+              <Image className={'rounded-full'} src={'https://thispersondoesnotexist.com/image'} width={64} height={64} alt={'AI Generated Host Image'}/>
+              <h2 className={'text-xl'}>Hosted by </h2>
             </div>
           </section>
         </div>
@@ -320,9 +355,47 @@ const Listing = ({listing,amenities,error, roomImages}) => {
           )}
         </ul>
       </Modal>
+
+      <Modal show={showAmenityModal} onClose={closeAmenityModal} title={'Amenities'} className={'w-[780px]'}>
+        <ul className={''}>
+          { amenities.map((item, index) => {
+            let Icon = getIcon(item);
+            if (Icon) {
+              return <li className={'flex py-6 border-gray-300 border-b'} key={item}><Icon className={'w-6 h-6 mr-4'}/>{item}</li>
+            }
+            return null;
+          })}
+        </ul>
+      </Modal>
+
+      <Modal show={showDescriptionModal} onClose={closeDescriptionModal} title={'Description'}>
+        <h3>Description</h3>
+        <p>{listing.description}</p>
+        <h3>Space</h3>
+        <p>{listing.space}</p>
+        <h3>Notes</h3>
+        <p>{listing.notes}</p>
+        <h3>Access</h3>
+        <p>{listing.access}</p>
+      </Modal>
+
+      <Modal background={false} show={showNeighborhoodModal} onClose={closeNeighborhoodModal} title={"Where You'll Be"} className={'h-full w-full'}>
+        <div className={'flex'}>
+          <div className={'basis-[400px]'}>
+            <h3 className={'text-xl mb-4'}>Neighborhood</h3>
+            <p>{listing.neighborhood_overview}</p>
+            <h3 className={'text-xl my-4'}>Transit</h3>
+            <p>{listing.transit}</p>
+          </div>
+          <div className={'w-[500px] h-full'}>
+            <GoogleMap lat={listing.address.location.coordinates[1]} lang={listing.address.location.coordinates[0]}/>
+          </div>
+        </div>
+      </Modal>
     </>
   )
 }
+
 
 const getIcon = (amenity = "") => {
   if(amenity.includes("translation missing")) {
@@ -384,8 +457,11 @@ const getIcon = (amenity = "") => {
         return MdCable;
       case "First aid kit":
         return BiFirstAid;
+      case "Pets live on this property":
       case "Pets allowed":
         return MdPets;
+      case "Cat(s)":
+        return GiCat;
       case "Hot water":
         return FaWater;
       case "Extra pillows and blankets":
