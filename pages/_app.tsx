@@ -14,7 +14,12 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
       <ApolloProvider client={apolloClient}>
         <div className={'text-dark bg-white min-h-[100vh] max-w-full relative '}>
-          <Component {...pageProps} />
+          <div>
+            <Component {...pageProps} />
+          </div>
+          <div className={'absolute bottom-0 bg-gray-300'}>
+            Footer
+          </div>
         </div>
       </ApolloProvider>
   )

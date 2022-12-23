@@ -2,7 +2,7 @@ import Head from 'next/head'
 import Image from 'next/image'
 
 import { gql, useQuery } from '@apollo/client'
-import { useCallback, useEffect, useRef, useState} from "react";
+import {createRef, useCallback, useEffect, useRef, useState} from "react";
 import {useBottomScrollListener} from "react-bottom-scroll-listener";
 import {StarIcon} from "@heroicons/react/20/solid";
 import {HeartIcon} from "@heroicons/react/24/outline";
@@ -14,6 +14,7 @@ import {GiBarn, GiBunkBeds, GiCampfire, GiCaravan, GiCastle, GiFarmTractor, GiTr
 import {IoEarthSharp} from "react-icons/io5";
 import Link from "next/link";
 import NavBar from "../components/NavBar";
+import AccountMenu from "../components/AccountMenu";
 
 const icons = [
   {
@@ -173,7 +174,11 @@ export default function Home() {
       </Head>
 
       <header className={'sticky top-0 z-10 bg-white  shadow-lg'}>
-        <NavBar/>
+        <div className={`flex justify-between items-center px-4`}>
+          <Link href={'/'} className={'px-4 py-2 bg-primary text-light my-2 rounded-3xl'}>SkyBnB</Link>
+          <button className={'rounded-3xl px-6 py-2 border border-dark shadow-md opacity-70 hover:opacity-100'}>Filter</button>
+          <AccountMenu/>
+        </div>
         <hr/>
       <PropertyTypeFilter onFilterSelect={handlePropertyClick}/>
       </header>
@@ -221,12 +226,21 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
   const [lastScroll, setLastScroll] = useState(0);
   const [scrollCount, setScrollCount] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const [refs, setRefs] = useState([]);
+  const [lastDirection, setLastDirection] = useState("none");
 
   useEffect(() => {
-    console.log(`lastScroll ${lastScroll}, scrollCount: ${scrollCount}`)
-  })
+    // add or remove refs
+    setRefs((refs) =>
+      Array(icons.length)
+        .fill(0)
+        .map((_, i) => refs[i] || createRef()),
+    );
+  }, []);
 
-  /** Determine direction of scroll and adjust scroll offset **/
+
+
+  /** Determine direction of scroll and adjust scroll offset *
   const handleScroll = (event) => {
     // Event will fire many times. Only adjust scroll count once per scroll.
     if(scrolled) {
@@ -240,22 +254,60 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
     }
     setLastScroll(event.currentTarget.scrollLeft);
   }
+   */
 
   const handlePropertyScrolled = (direction: String) => {
     setScrolled(true);
+    console.log(refs)
+    console.log(`LastDirection ${lastDirection} scrollCount ${scrollCount}`)
+    let shift;
     if (direction === "left" && scrollCount > 0) {
-      scrollDiv?.current?.scrollTo((scrollCount - 1) * 200, 0);
-    } else if (direction === "right" ) {
-      scrollDiv?.current?.scrollTo((scrollCount + 1) * 200, 0);
+      //scrollDiv?.current?.scrollTo((scrollCount - 1) * 200, 0);
+      if(lastDirection === "left") {
+        shift = -3;
+      } else {
+        shift = -7;
+      }
+      setLastDirection("left");
+      if(scrollCount + shift < 0) {
+        refs[0].current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        setScrollCount(0);
+      }
+      else {
+        refs[scrollCount + shift].current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        setScrollCount(prevState => prevState + shift)
+      }
+    } else if (direction === "right") {
+      //scrollDiv?.current?.scrollTo((scrollCount + 1) * 200, 0);
+      if (lastDirection === "none" || lastDirection === "left") {
+        shift = 7;
+      } else if (lastDirection === "right") {
+        shift = 3;
+      }
+      console.log(`Shift ${shift} refLength ${refs.length}`)
+      setLastDirection("right");
+      if(scrollCount + shift > refs.length - 3) {
+        refs[refs.length - 1].current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        setScrollCount(refs.length - 1);
+      } else {
+        refs[scrollCount + shift].current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        setScrollCount(prevState => prevState + shift)
+      }
     }
+
   }
   const scrollDiv = useRef(null)
 
+  const handleTouchStart = (event) => {
+
+  }
+// onScroll={handleScroll}
   return (
-    <div className={'flex pl-4 relative '}>
-      <div onScroll={handleScroll} className={'flex py-2 scroll-smooth overflow-hidden items-center gap-12 bg-white relative transition-all'} ref={scrollDiv}>
-        {icons.map(icon =>
+    <div className={'flex pl-4 relative'}>
+      <div onTouchStart={handleTouchStart}  className={'flex py-2 scroll-smooth overflow-hidden items-center gap-4 sm:gap-8 md:gap-12 bg-white relative transition-all'} ref={scrollDiv}>
+        {icons.map((icon, index) =>
           <button
+            ref={refs[index]}
             key={icon.text} onClick={() => onFilterSelect(icon.type)} className={'flex flex-col items-center opacity-70 hover:opacity-100'}>
             <icon.icon className={'w-6 h-6'}/>
             <span className={'text-sm'}>{icon.text}</span>
@@ -271,13 +323,15 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
           </button>
         </div>
       }
-      <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center right-0'}>
-        <button onClick={() => handlePropertyScrolled("right")}
-                className={'rounded-full border border-dark p-1 mx-4 opacity-70 hover:opacity-100'}>
-          <BsChevronRight/>
-        </button>
-        <button className={'rounded-3xl px-6 py-2 border border-dark shadow-md opacity-70 hover:opacity-100'}>Filter</button>
-      </div>
+      { scrollCount < refs.length - 1 &&
+        <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center right-0'}>
+          <button onClick={() => handlePropertyScrolled("right")}
+                  className={'rounded-full border border-dark p-1 mx-4 opacity-70 hover:opacity-100'}>
+            <BsChevronRight/>
+          </button>
+
+        </div>
+      }
     </div>
   )
 }
