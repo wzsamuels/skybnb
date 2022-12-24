@@ -17,9 +17,6 @@ export default function App({ Component, pageProps }: AppProps) {
           <div>
             <Component {...pageProps} />
           </div>
-          <div className={'absolute bottom-0 bg-gray-300'}>
-            Footer
-          </div>
         </div>
       </ApolloProvider>
   )

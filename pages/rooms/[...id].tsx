@@ -228,7 +228,7 @@ const Listing = ({listing,amenities,error, roomImages}) => {
   console.log(roomImages)
   return (
     <>
-      <NavBar className={'shadow'}/>
+      <NavBar className={'shadow max-w-[1080px]'}/>
       <div className={'flex justify-center w-full'}>
         <div className={'w-full max-w-[1080px] px-6'}>
           <div className={'flex flex-col-reverse md:flex-col'}>
@@ -347,30 +347,38 @@ const Listing = ({listing,amenities,error, roomImages}) => {
               <h2 className={'text-xl'}>Hosted by {listing.host.host_name}</h2>
             </div>
               <div className={'grid grid-cols-1 md:grid-cols-2 grid-rows-1 gap-4'}>
-                <div>
-                  <h3>About this host</h3>
-                  <p>{listing.host.host_about}</p>
-                </div>
+                { listing.host.host_about &&
+                  <div>
+                    <h3>About this host</h3>
+                    <p>{listing.host.host_about}</p>
+                  </div>
+                }
                 <div className={'ml-[8%]'}>
-                  <p>Response rate: {listing.host.host_response_rate}</p>
-                  <p>Response time: {listing.host.host_response_time}</p>
+                  {listing.host.host_response_rate && <p>Response rate: {listing.host.host_response_rate}</p>}
+                  {listing.host.host_response_time && <p>Response time: {listing.host.host_response_time}</p>}
                 </div>
               </div>
 
           </section>
         </div>
       </div>
+      <div className={'bottom-0 bg-gray-300 p-4'}>
+        Footer
+      </div>
+      <div className={'sticky bottom-0'}>
+        <button>Reserve</button>
+      </div>
 
       <Modal show={showReviewDialog} onClose={closeReviewDialog} title={"Reviews"}>
         <div className={'grid grid-cols-1 md:grid-cols-2 grid-rows-1'}>
-          <div>
+          <div className={'mb-4'}>
             { renderScores() }
           </div>
           <ul className={'bg-white '}>
             { listing.reviews?.map(review =>
               <li key={review.id} className={'mb-4'}>
                 <p className={'font-bold'}>{review.reviewer_name}</p>
-                <p>{`${(new Date(review.date)).getMonth()+1}/${(new Date(review.date)).getDay()}/${(new Date(review.date)).getFullYear()}`}</p>
+                <p>{`${(new Date(review.date)).getMonth()+1}/${(new Date(review.date)).getDay()+1}/${(new Date(review.date)).getFullYear()}`}</p>
                 <p>{review.comments}</p>
               </li>
             )}

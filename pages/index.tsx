@@ -15,6 +15,7 @@ import {IoEarthSharp} from "react-icons/io5";
 import Link from "next/link";
 import NavBar from "../components/NavBar";
 import AccountMenu from "../components/AccountMenu";
+import useWindowDimensions from "../lib/useWindowDimensions"
 
 const icons = [
   {
@@ -223,11 +224,10 @@ export default function Home() {
 }
 
 const PropertyTypeFilter = ({onFilterSelect}) => {
-  const [lastScroll, setLastScroll] = useState(0);
   const [scrollCount, setScrollCount] = useState(0);
-  const [scrolled, setScrolled] = useState(false);
   const [refs, setRefs] = useState([]);
   const [lastDirection, setLastDirection] = useState("none");
+  const dimensions = useWindowDimensions();
 
   useEffect(() => {
     // add or remove refs
@@ -238,39 +238,19 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
     );
   }, []);
 
-
-
-  /** Determine direction of scroll and adjust scroll offset *
-  const handleScroll = (event) => {
-    // Event will fire many times. Only adjust scroll count once per scroll.
-    if(scrolled) {
-      if (lastScroll < event.currentTarget.scrollLeft) {
-        setScrollCount(scrollCount + 1);
-      } else {
-        setScrollCount(scrollCount - 1);
-      }
-      setLastScroll(event.currentTarget.scrollLeft)
-      setScrolled(false);
-    }
-    setLastScroll(event.currentTarget.scrollLeft);
-  }
-   */
-
   const handlePropertyScrolled = (direction: String) => {
-    setScrolled(true);
-    console.log(refs)
-    console.log(`LastDirection ${lastDirection} scrollCount ${scrollCount}`)
     let shift;
+
     if (direction === "left" && scrollCount > 0) {
-      //scrollDiv?.current?.scrollTo((scrollCount - 1) * 200, 0);
       if(lastDirection === "left") {
         shift = -3;
       } else {
-        shift = -7;
+        shift = dimensions.width <= 700 ? -5 : -7;
       }
       setLastDirection("left");
+      // Prevent scrolling past beginning
       if(scrollCount + shift < 0) {
-        refs[0].current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        refs[0].current.scrollIntoView();
         setScrollCount(0);
       }
       else {
@@ -278,13 +258,11 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
         setScrollCount(prevState => prevState + shift)
       }
     } else if (direction === "right") {
-      //scrollDiv?.current?.scrollTo((scrollCount + 1) * 200, 0);
       if (lastDirection === "none" || lastDirection === "left") {
-        shift = 7;
+        shift = dimensions.width > 700 ? 5 : 7;
       } else if (lastDirection === "right") {
         shift = 3;
       }
-      console.log(`Shift ${shift} refLength ${refs.length}`)
       setLastDirection("right");
       if(scrollCount + shift > refs.length - 3) {
         refs[refs.length - 1].current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
@@ -303,8 +281,8 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
   }
 // onScroll={handleScroll}
   return (
-    <div className={'flex pl-4 relative'}>
-      <div onTouchStart={handleTouchStart}  className={'flex py-2 scroll-smooth overflow-hidden items-center gap-4 sm:gap-8 md:gap-12 bg-white relative transition-all'} ref={scrollDiv}>
+    <div className={'flex relative'}>
+      <div onTouchStart={handleTouchStart}  className={`flex py-2 ${scrollCount > 3 ? 'pl-[58px]' : 'pl-4' } ${(scrollCount < refs.length - 4) ? 'pr-[58px]' : 'pr-4'} scroll-smooth overflow-hidden items-center gap-4 sm:gap-8 md:gap-12 bg-white relative transition-all`} ref={scrollDiv}>
         {icons.map((icon, index) =>
           <button
             ref={refs[index]}
@@ -315,21 +293,20 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
         )}
       </div>
       {
-        scrollCount > 0 &&
+        (scrollCount > 3 && dimensions.width > 700 || scrollCount > 1 && dimensions.width <= 700) &&
         <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center left-0'}>
           <button onClick={() => handlePropertyScrolled("left")}
-                  className={'rounded-full border border-dark p-1 mx-4 opacity-70 hover:opacity-100'}>
+                  className={'rounded-full border border-dark p-1 mx-2 md:mx-4 opacity-70 hover:opacity-100'}>
             <BsChevronLeft/>
           </button>
         </div>
       }
-      { scrollCount < refs.length - 1 &&
+      { (scrollCount < refs.length - 4 || scrollCount < refs.length - 3 && dimensions.width <= 700) &&
         <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center right-0'}>
           <button onClick={() => handlePropertyScrolled("right")}
                   className={'rounded-full border border-dark p-1 mx-4 opacity-70 hover:opacity-100'}>
             <BsChevronRight/>
           </button>
-
         </div>
       }
     </div>
