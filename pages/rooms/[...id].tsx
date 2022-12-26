@@ -47,8 +47,7 @@ import {
 } from "react-icons/md"
 import { BiAlarmExclamation, BiBed, BiFirstAid } from "react-icons/bi";
 import {CgSmartHomeRefrigerator, CgSmartHomeWashMachine} from "react-icons/cg"
-import {FiClock}
- from "react-icons/fi";
+import {FiClock} from "react-icons/fi";
 import {RiAlarmWarningLine} from "react-icons/ri";
 import {Fragment, useState} from "react";
 import NavBar from "../../components/NavBar";
@@ -57,7 +56,10 @@ import ProgressBar from "../../components/Progress";
 import {StarIcon} from "@heroicons/react/20/solid";
 import Modal from "../../components/Modal";
 import GoogleMap from "../../components/GoogleMap";
-import Datepicker from "react-tailwindcss-datepicker";
+import dayjs from "dayjs";
+import isBetween from 'dayjs/plugin/isBetween';
+import Calendar from "../../components/Calendar";
+dayjs.extend(isBetween);
 
 const GetListing = gql`
   query GetListing($query: ListingInput!) {
@@ -210,14 +212,8 @@ const Listing = ({listing,amenities,error, roomImages}) => {
     )
   }
 
-  const [value, setValue] = useState({
-    startDate: new Date(),
-    endDate: new Date().setMonth(11)
-  });
+  const handleDateChange = () => {
 
-  const handleValueChange = (newValue) => {
-    console.log("newValue:", newValue);
-    setValue(newValue);
   }
 
   if(error) {
@@ -226,11 +222,14 @@ const Listing = ({listing,amenities,error, roomImages}) => {
   }
 
   console.log(roomImages)
+
+
+
   return (
     <>
-      <NavBar className={'shadow max-w-[1080px]'}/>
+      <NavBar className={'shadow max-w-[1280px]'}/>
       <div className={'flex justify-center w-full'}>
-        <div className={'w-full max-w-[1080px] px-6'}>
+        <div className={'w-full max-w-[1280px] px-6'}>
           <div className={'flex flex-col-reverse md:flex-col'}>
             <div>
               <h1 className={'text-3xl pt-6 '}>{listing.name}</h1>
@@ -279,8 +278,10 @@ const Listing = ({listing,amenities,error, roomImages}) => {
               </div>
               <Description listing={listing}/>
               <Amenities amenities={amenities}/>
+              <Calendar onDateChange={handleDateChange}/>
             </div>
-            <div className={'hidden w-1/3 md:block'}>
+
+            <div className={'hidden w-5/12 md:block'}>
               <div className={'ml-[8%] rounded-xl sticky top-0 shadow border border-gray-300 p-6'}>
                 <p className={'text-lg font-bold'}>${listing.price} / night</p>
                 {listing.weekly_price && <p>${listing.weekly_price} / week</p> }
@@ -292,6 +293,7 @@ const Listing = ({listing,amenities,error, roomImages}) => {
                 <button className={'py-2 px-4 rounded-xl bg-primary text-light'}>Reserve</button>
               </div>
             </div>
+
           </div>
 
           { listing.reviews && listing.reviews.length !== 0 &&
@@ -402,6 +404,7 @@ const Listing = ({listing,amenities,error, roomImages}) => {
     </>
   )
 }
+
 
 
 const Description = ({listing}) => {

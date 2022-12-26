@@ -13,9 +13,9 @@ import {RiSailboatLine} from "react-icons/ri";
 import {GiBarn, GiBunkBeds, GiCampfire, GiCaravan, GiCastle, GiFarmTractor, GiTreehouse} from "react-icons/gi";
 import {IoEarthSharp} from "react-icons/io5";
 import Link from "next/link";
-import NavBar from "../components/NavBar";
 import AccountMenu from "../components/AccountMenu";
 import useWindowDimensions from "../lib/useWindowDimensions"
+import Modal from "../components/Modal";
 
 const icons = [
   {
@@ -139,11 +139,14 @@ export default function Home() {
   const {data, loading, error, fetchMore} = useQuery(GetListings, {
     variables: {first: 20, query: filter}
   })
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showLoadingPopup, setShowLoadingPopup] = useState(false);
 
   const { endCursor, hasNextPage } = data?.listings.pageInfo || {};
 
   const handleOnDocumentBottom = useCallback(() => {
     if(hasNextPage) {
+      setShowLoadingPopup(true);
       fetchMore({
         variables: {after: endCursor},
         updateQuery: (prevResult, {fetchMoreResult}) => {
@@ -153,7 +156,10 @@ export default function Home() {
           ];
           return fetchMoreResult;
         },
-      }).then(r => console.log(r)).catch(error => console.error(error));
+      }).then(r => {
+        console.log(r);
+        setShowLoadingPopup(false);
+      }).catch(error => console.error(error));
     }
   }, [endCursor, fetchMore, hasNextPage]);
 
@@ -219,6 +225,14 @@ export default function Home() {
           </Link>
         )}
       </div>
+      <Modal show={showFilterModal} onClose={() => setShowFilterModal(false)} title={'Filters'}>
+
+      </Modal>
+      { showLoadingPopup &&
+        <div className={'fixed bottom-4 flex justify-center w-full'}>
+          <p className={'text-primary w-52 bg-light rounded-xl py-2 px-4'}>Loading More Listings...</p>
+        </div>
+      }
     </div>
   )
 }
@@ -279,7 +293,7 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
   const handleTouchStart = (event) => {
 
   }
-// onScroll={handleScroll}
+
   return (
     <div className={'flex relative'}>
       <div onTouchStart={handleTouchStart}  className={`flex py-2 ${scrollCount > 3 ? 'pl-[58px]' : 'pl-4' } ${(scrollCount < refs.length - 4) ? 'pr-[58px]' : 'pr-4'} scroll-smooth overflow-hidden items-center gap-4 sm:gap-8 md:gap-12 bg-white relative transition-all`} ref={scrollDiv}>
