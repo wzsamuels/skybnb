@@ -1,11 +1,9 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import dayjs, {Dayjs} from "dayjs";
 import {FiChevronLeft, FiChevronRight} from "react-icons/fi";
 
-const Calendar = ({onDateChange}) => {
-  const [startDate, setStartDate] = useState(dayjs().add(1, "day"));
-  const [endDate, setEndDate] = useState<Dayjs>(null);
-  const [selectedDate, setSelectedDate] = useState(startDate)
+const Calendar = ({dates, setDates}) => {
+  const [selectedDate, setSelectedDate] = useState(dayjs())
   const currentDate = dayjs();
 
   const handleLeftButton = () => {
@@ -16,18 +14,20 @@ const Calendar = ({onDateChange}) => {
     setSelectedDate(state => state.add(1, "month"));
   }
 
-  const handleDateClick = (day) => {
-    if(startDate && day.isSame(startDate, 'day')) {
-      setStartDate(null)
-      setEndDate(null)
-    } else if(!startDate && !endDate) {
-      setStartDate(day);
-    } else if(endDate && day.isSame(endDate, 'day')) {
-      setEndDate(null);
-    } else {
-      setEndDate(day)
-    }
+  useEffect(() => {
+    console.log(dates)
+  }, [dates])
 
+  const handleDateClick = (day) => {
+    if(dates.startDate && day.isSame(dates.startDate, 'day')) {
+      setDates({startDate: null, endDate: null})
+    } else if(!dates.startDate && !dates.endDate) {
+      setDates({...dates, startDate: day})
+    } else if(dates.endDate && day.isSame(dates.endDate, 'day')) {
+      setDates({...dates, endDate: null})
+    } else {
+      setDates({...dates, endDate: day})
+    }
   }
 
   const renderCalendar = (date) => {
@@ -55,10 +55,8 @@ const Calendar = ({onDateChange}) => {
     let divs = [];
     let indexDate = dayjs(date.date(1))
     let dayOfWeek = 0;
-    console.log(indexDate)
 
     while(true) {
-      console.log(`${indexDate.day()} ${dayOfWeek}`)
       if(state === "preBlank") {
         if(dayOfWeek === indexDate.day()) {
           state = "date";
@@ -83,18 +81,18 @@ const Calendar = ({onDateChange}) => {
   }
 
   const renderCalendarDay = (day) => {
-    if(startDate && day.isSame(startDate, 'day') || endDate && day.isSame(endDate, 'day')) {
-      const style = day.isSame(startDate, 'day') ? 'right-0' : 'left-0';
+    if(dates.startDate && day.isSame(dates.startDate, 'day') || dates.endDate && day.isSame(dates.endDate, 'day')) {
+      const style = day.isSame(dates.startDate, 'day') ? 'right-0' : 'left-0';
       return (
         <div className={'relative'}>
           <button
             onClick={() => handleDateClick(day)}
             className={'z-20 relative aspect-square shadow-xl max-w-full max-h-full w-full h-full flex p-2 justify-center items-center rounded-full bg-black text-light hover:cursor-pointer'}>{day.date()}
           </button>
-          {startDate && endDate && <div className={`z-10 absolute ${style} bg-gray-100 w-1/2 h-full top-0`}/>}
+          {dates.startDate && dates.endDate && <div className={`z-10 absolute ${style} bg-gray-100 w-1/2 h-full top-0`}/>}
         </div>
       )
-    } else if(startDate && endDate && day.isBetween(startDate,endDate, 'day')) {
+    } else if(dates.startDate && dates.endDate && day.isBetween(dates.startDate,dates.endDate, 'day')) {
       return (
         <div className={'bg-gray-100'}>
           <button
@@ -108,7 +106,7 @@ const Calendar = ({onDateChange}) => {
     return (
       <button
         onClick={() => handleDateClick(day)}
-        disabled={day.isBefore(startDate, 'day') || day.isBefore(currentDate, 'day')}
+        disabled={day.isBefore(dates.startDate, 'day') || day.isBefore(currentDate, 'day')}
         className={`aspect-square  disabled:text-gray-300 disabled:line-through max-w-full max-h-full w-full h-full hover:cursor-pointer flex p-2  justify-center items-center rounded-full hover:border hover:border-gray-300 hover:cursor-pointer`}>
         {day.date()}
       </button>
@@ -117,11 +115,11 @@ const Calendar = ({onDateChange}) => {
 
 
   return (
-    <section className={'border-t border-gray-300 py-6 md:py-8'}>
+    <>
       <h2 className={'text-2xl'}>
-        {!startDate && !endDate && "Select a Check-In Date"}
-        {startDate && !endDate && "Select a Check-Out Date"}
-        {startDate && endDate && <span>{endDate.diff(startDate, 'day')} Nights</span>}
+        {!dates.startDate && !dates.endDate && "Select a Check-In Date"}
+        {dates.startDate && !dates.endDate && "Select a Check-Out Date"}
+        {dates.startDate && dates.endDate && <span>{dates.endDate.diff(dates.startDate, 'day')} Nights</span>}
       </h2>
       <div className={'relative'}>
         <div className={'flex justify-between my-4 absolute top-0 w-full px-2'}>
@@ -139,12 +137,12 @@ const Calendar = ({onDateChange}) => {
         <div>
           <button
             className={'underline w-full flex justify-end'}
-            onClick={() => {setStartDate(null); setEndDate(null)}}>
+            onClick={() => {setDates({endDate: null, startDate: null})}}>
             Clear dates
           </button>
         </div>
       </div>
-    </section>
+    </>
   )
 }
 

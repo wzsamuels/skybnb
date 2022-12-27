@@ -230,7 +230,7 @@ export default function Home() {
       </Modal>
       { showLoadingPopup &&
         <div className={'fixed bottom-4 flex justify-center w-full'}>
-          <p className={'text-primary w-52 bg-light rounded-xl py-2 px-4'}>Loading More Listings...</p>
+          <p className={'text-primary w-52 shadow-full rounded-xl bg-white py-2 px-4'}>Loading More Listings...</p>
         </div>
       }
     </div>

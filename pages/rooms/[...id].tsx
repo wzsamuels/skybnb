@@ -49,7 +49,7 @@ import { BiAlarmExclamation, BiBed, BiFirstAid } from "react-icons/bi";
 import {CgSmartHomeRefrigerator, CgSmartHomeWashMachine} from "react-icons/cg"
 import {FiClock} from "react-icons/fi";
 import {RiAlarmWarningLine} from "react-icons/ri";
-import {Fragment, useState} from "react";
+import {Fragment, useEffect, useState} from "react";
 import NavBar from "../../components/NavBar";
 import apolloClient from "../../lib/apollo";
 import ProgressBar from "../../components/Progress";
@@ -59,6 +59,7 @@ import GoogleMap from "../../components/GoogleMap";
 import dayjs from "dayjs";
 import isBetween from 'dayjs/plugin/isBetween';
 import Calendar from "../../components/Calendar";
+import {Popover} from "@headlessui/react";
 dayjs.extend(isBetween);
 
 const GetListing = gql`
@@ -159,9 +160,20 @@ const Listing = ({listing,amenities,error, roomImages}) => {
   const [showNeighborhoodModal, setShowNeighborhoodModal] = useState(false);
   const openNeighborhoodModal = () => setShowNeighborhoodModal(true);
   const closeNeighborhoodModal = () => setShowNeighborhoodModal(false);
+
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const openReviewDialog = () => setShowReviewDialog(true);
   const closeReviewDialog = () => setShowReviewDialog(false);
+
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const openCalendarModal = () => setShowCalendarModal(true);
+  const closeCalendarModal = () => setShowCalendarModal(false);
+
+  const [dates, setDates] = useState({startDate: null, endDate: null})
+
+  useEffect(() => {
+    console.log(dates)
+  },[dates])
 
   const renderScores = ()  => {
     return (
@@ -212,38 +224,38 @@ const Listing = ({listing,amenities,error, roomImages}) => {
     )
   }
 
-  const handleDateChange = () => {
-
-  }
-
   if(error) {
     console.error(`Error ${error}`);
     return <h1 className={'text-3xl'}>Error Loading Listing. Error details logged to console.</h1>
   }
 
-  console.log(roomImages)
-
-
+  const renderReviewCount = () => {
+    return (
+      <div className={'flex items-center'}>
+        { listing.number_of_reviews ?
+          <>
+            <AiFillStar className={'mr-1 w-4 h-4'}/>
+            {(listing.review_scores.review_scores_rating / 100 * 5).toFixed(2)}
+            <span className={'font-bold px-1'}>·</span>
+            <button onClick={openReviewDialog} className={'underline'}>{listing.number_of_reviews} reviews</button>
+          </>
+          :
+          <span>No reviews yet</span>
+        }
+      </div>
+    )
+  }
 
   return (
     <>
       <NavBar className={'shadow max-w-[1280px]'}/>
       <div className={'flex justify-center w-full'}>
-        <div className={'w-full max-w-[1280px] px-6'}>
+        <div className={'w-full max-w-[1280px] px-[40px] lg:px-[80px]'}>
           <div className={'flex flex-col-reverse md:flex-col'}>
             <div>
               <h1 className={'text-3xl pt-6 '}>{listing.name}</h1>
               <div className={'flex items-center mt-2'}>
-                { listing.number_of_reviews ?
-                  <>
-                    <AiFillStar className={'mr-1 w-4 h-4'}/>
-                    {(listing.review_scores.review_scores_rating / 100 * 5).toFixed(1)}
-                    <span className={'font-bold px-1'}>·</span>
-                    <button onClick={openReviewDialog} className={'underline'}>{listing.number_of_reviews} reviews</button>
-                  </>
-                  :
-                  <span>No reviews yet</span>
-                }
+                { renderReviewCount() }
                 <span className={'font-bold px-1'}>·</span>
                 { listing.host_is_superhost &&
                   <span>
@@ -267,7 +279,7 @@ const Listing = ({listing,amenities,error, roomImages}) => {
 
           <div className={'flex justify-between'}>
             <div className={'w-full md:w-7/12'}>
-              <div className={'flex justify-between py-6 md:pt-8'}>
+              <div className={'flex justify-between py-6 md:pt-12'}>
                 <div>
                   <div className={'text-2xl'}>{listing.property_type} hosted by {listing.host.host_name}</div>
                   <div>{listing.guests_included} guest{listing.guests_included > 1 ? "s" : ""} · {listing.bedrooms > 0 && `${listing.bedrooms} bedroom${listing.bedrooms > 1 ? "s" : ""} · `}
@@ -278,18 +290,55 @@ const Listing = ({listing,amenities,error, roomImages}) => {
               </div>
               <Description listing={listing}/>
               <Amenities amenities={amenities}/>
-              <Calendar onDateChange={handleDateChange}/>
+              <section className={'border-t border-gray-300 py-6 md:py-8'}>
+                <Calendar dates={dates} setDates={setDates}/>
+              </section>
             </div>
+            {/*dates={dates} setDates={setDates}*/}
+            <div className={'hidden w-1/3 md:block'}>
+              <div className={'mt-12 mb-12 ml-[8%] rounded-xl sticky top-12 shadow border border-gray-300 p-6'}>
+                <div className={'flex justify-between flex-wrap mb-4'}>
+                  <p className={'text-lg font-bold'}>${listing.price} night</p>
+                  { renderReviewCount() }
+                </div>
 
-            <div className={'hidden w-5/12 md:block'}>
-              <div className={'ml-[8%] rounded-xl sticky top-0 shadow border border-gray-300 p-6'}>
-                <p className={'text-lg font-bold'}>${listing.price} / night</p>
-                {listing.weekly_price && <p>${listing.weekly_price} / week</p> }
-                {listing.monthly_price && <p>${listing.monthly_price} / month</p> }
-                {listing.cleaning_fee && <p>Cleaning Fee: ${listing.cleaning_fee}</p>}
-                {listing.security_deposit && <p>Security Deposit: ${listing.security_deposit}</p> }
-                <input type={'date'}/>
+                <Popover>
+                  <Popover.Button
+                    className={'border border-black rounded-lg flex truncate w-full mb-4'}>
+                    <div className={'w-1/2 border-r border-black'}>
+                      <div className={'pt-1 pb-3 px-3'}>
+                        <p className={'text-[10px] uppercase pb-1 truncate'}>Check-in</p>
+                        { dates.startDate ?
+                          <p className={'truncate  text-sm'}>{dates.startDate.format('MM/DD/YYYY')}</p>
+                          :
+                          <p className={'truncate text-sm'}>Add date</p>
+                        }
+                      </div>
+                    </div>
+                    <div className={'w-1/2 truncate'}>
+                      <div className={'pt-1 pb-3 px-3 '}>
+                        <p className={'text-[10px] uppercase pb-1 truncate'}>Checkout</p>
+                        { dates.endDate ?
+                          <p className={'truncate text-sm'}>{dates.endDate.format('MM/DD/YYYY')}</p>
+                          :
+                          <p className={'truncate text-sm'}>Add date</p>
+                        }
+                      </div>
+                    </div>
+                  </Popover.Button>
+                  <Popover.Panel className={'absolute z-10 right-[50px] w-[660px] bg-white rounded shadow-full p-4'}>
+                    <Calendar dates={dates} setDates={setDates}/>
+                  </Popover.Panel>
+                </Popover>
+
                 <button>Guests</button>
+
+                <div className={'flex justify-between w-full'}>
+                  <span>Cleaning Fee</span>
+                  <span>${listing.cleaning_fee}</span>
+                </div>
+                <div>Security Deposit: ${listing.security_deposit}</div>
+
                 <button className={'py-2 px-4 rounded-xl bg-primary text-light'}>Reserve</button>
               </div>
             </div>
@@ -313,8 +362,14 @@ const Listing = ({listing,amenities,error, roomImages}) => {
                   <Fragment key={review.id}>
                     { index < 6 &&
                       <li className={'my-2'}>
-                        <p className={'font-bold'}>{review.reviewer_name}</p>
-                        <p>{`${(new Date(review.date)).getMonth()+1}/${(new Date(review.date)).getDay()+1}/${(new Date(review.date)).getFullYear()}`}</p>
+                        <div className={'flex'}>
+                          <Image className={'mr-2 rounded-full'} alt={''} width={52} height={52} src={`https://i.pravatar.cc/52?${index}`}/>
+                          <div>
+                            <p className={'font-bold'}>{review.reviewer_name}</p>
+                            <p>{`${(new Date(review.date)).getMonth()+1}/${(new Date(review.date)).getDay()+1}/${(new Date(review.date)).getFullYear()}`}</p>
+
+                          </div>
+                        </div>
                         <p className={'line-clamp-4'}>{review.comments}</p>
                       </li>
                     }
@@ -364,7 +419,7 @@ const Listing = ({listing,amenities,error, roomImages}) => {
           </section>
         </div>
       </div>
-      <div className={'bottom-0 bg-gray-300 p-4'}>
+      <div className={'bottom-0 bg-gray-100 p-4'}>
         Footer
       </div>
       <div className={'sticky bottom-0'}>
@@ -372,9 +427,14 @@ const Listing = ({listing,amenities,error, roomImages}) => {
       </div>
 
       <Modal show={showReviewDialog} onClose={closeReviewDialog} title={"Reviews"}>
-        <div className={'grid grid-cols-1 md:grid-cols-2 grid-rows-1'}>
-          <div className={'mb-4'}>
+        <div className={'grid grid-cols-1 md:grid-cols-2 grid-rows-1 relative'}>
+          <div>
+          <div className={'mb-4 flex flex-col gap-2 sticky top-0'}>
+            <div className={'text-2xl'}>
+              { renderReviewCount()}
+            </div>
             { renderScores() }
+          </div>
           </div>
           <ul className={'bg-white '}>
             { listing.reviews?.map(review =>
@@ -436,14 +496,14 @@ const Description = ({listing}) => {
         }
         { listing.notes &&
           <>
-            <h3>Notes</h3>
-            <p>{listing.notes}</p>
+            <h3 className={'font-bold'}>Notes</h3>
+            <p className={'mb-4'}>{listing.notes}</p>
           </>
         }
         { listing.access &&
           <>
-            <h3>Guest Access</h3>
-            <p>{listing.access}</p>
+            <h3 className={'font-bold'}>Guest Access</h3>
+            <p className={'mb-4'}>{listing.access}</p>
           </>
         }
       </Modal>
