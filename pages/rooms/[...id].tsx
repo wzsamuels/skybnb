@@ -1,14 +1,14 @@
-import { gql } from '@apollo/client'
+import {gql, useQuery} from '@apollo/client'
 import Image from "next/image";
 import {
   AiFillStar,
   AiOutlineBell,
   AiOutlineCoffee,
   AiOutlineColumnWidth,
-  AiOutlineLock,
+  AiOutlineLock, AiOutlinePlus,
   AiOutlineTrophy
 } from "react-icons/ai";
-import {BsCalendarMonth, BsWifi} from "react-icons/bs"
+import {BsCalendarMonth, BsHouse, BsWifi} from "react-icons/bs"
 import {GrDownloadOption, GrElevator} from "react-icons/gr"
 import {
   FaBabyCarriage,
@@ -41,7 +41,7 @@ import {
   MdOutlineIron,
   MdOutlineLocalLaundryService,
   MdOutlineMicrowave, MdOutlineMiscellaneousServices, MdOutlinePrivacyTip, MdOutlineToys,
-  MdPets, MdPool,
+  MdPets, MdPool, MdRoom,
   MdSmokingRooms,
   MdWbShade
 } from "react-icons/md"
@@ -60,6 +60,8 @@ import dayjs from "dayjs";
 import isBetween from 'dayjs/plugin/isBetween';
 import Calendar from "../../components/Calendar";
 import {Popover} from "@headlessui/react";
+import Link from "next/link";
+import AccountMenu from "../../components/AccountMenu";
 dayjs.extend(isBetween);
 
 const GetListing = gql`
@@ -81,9 +83,14 @@ const GetListing = gql`
       house_rules
       accommodates
       
-      monthly_price
-      weekly_price
+      house_rules
       property_type
+      room_type
+      bed_type
+      minimum_nights
+      maximum_nights
+      cancellation_policy
+        
       guests_included
       bedrooms
       beds
@@ -133,29 +140,15 @@ const GetListing = gql`
 `
 
 export async function getServerSideProps(ctx: { params: { id: string; }; }) {
-  const { data, error } = await apolloClient.query({
-    query: GetListing, variables: {query: {id: ctx.params.id[0]}}
-  });
-  // @ts-ignore
-  const amenities = [...new Set(data.listing.amenities)]
-
-  const res = await fetch(`https://api.unsplash.com/photos/random?client_id=v02k1NX-98Yma-9c5-lU0BrKTM3YCrz8i6p1YMDz8jE&query=room&count=4`, {
-    method: 'GET',
-  })
-  const roomImages = await res.json();
-
+  const id  = ctx.params.id[0]
   return {
     props: {
-      listing: data.listing,
-      amenities: amenities ? amenities: null,
-      error: error ? error : null,
-      roomImages
+      id
     },
   };
 }
 
-const Listing = ({listing,amenities,error, roomImages}) => {
-
+const Listing = ({id}) => {
 
   const [showNeighborhoodModal, setShowNeighborhoodModal] = useState(false);
   const openNeighborhoodModal = () => setShowNeighborhoodModal(true);
@@ -165,15 +158,42 @@ const Listing = ({listing,amenities,error, roomImages}) => {
   const openReviewDialog = () => setShowReviewDialog(true);
   const closeReviewDialog = () => setShowReviewDialog(false);
 
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
-  const openCalendarModal = () => setShowCalendarModal(true);
-  const closeCalendarModal = () => setShowCalendarModal(false);
+  const { data, error,loading } = useQuery(GetListing,{variables: {query: {id}}});
+  const [roomImages, setRoomImages] = useState(null);
+  const [dates, setDates] = useState({startDate: null, endDate: null});
+  const [guests, setGuests] = useState({adults: 0,  children: 0, infants: 0, pets: 0});
+  // @ts-ignore
+  const amenities = data ? [...new Set(data?.listing.amenities)] : null;
 
-  const [dates, setDates] = useState({startDate: null, endDate: null})
+  useEffect(() => {
+    const fetchImages = async () => {
+      const res = await fetch(`https://api.unsplash.com/photos/random?client_id=v02k1NX-98Yma-9c5-lU0BrKTM3YCrz8i6p1YMDz8jE&query=room&count=4`, {
+        method: 'GET',
+      })
+      setRoomImages(await res.json());
+    }
+    fetchImages();
+
+  },[])
+
+
 
   useEffect(() => {
     console.log(dates)
   },[dates])
+
+  if(error) {
+    console.error(`Error ${error}`);
+    return <h1 className={'text-xl'}>Error Loading Listing. Error details logged to console.</h1>
+  }
+
+  /** Calculate the total to book the listing **/
+  const total = (() => {
+    if(dates.startDate && dates.endDate) {
+      return (data?.listing.cleaning_fee + data?.listing.security_deposit + data?.listing.price * dates.endDate.diff(dates.startDate, 'day'))
+    }
+    return null;
+  })();
 
   const renderScores = ()  => {
     return (
@@ -181,63 +201,58 @@ const Listing = ({listing,amenities,error, roomImages}) => {
         <div className={'flex items-center justify-between'}>
           <div className={'basis-auto'}>Cleanliness</div>
           <div className={'min-w-auto basis-[50%] items-center flex'}>
-            <ProgressBar percent={listing.review_scores.review_scores_cleanliness * 10}/>
-            <span className={'ml-2'}>{listing.review_scores.review_scores_cleanliness}</span>
+            <ProgressBar percent={data?.listing.review_scores.review_scores_cleanliness * 10}/>
+            <span className={'ml-2'}>{data?.listing.review_scores.review_scores_cleanliness}</span>
           </div>
         </div>
         <div className={'flex items-center justify-between'}>
           <div className={'basis-auto'}>Accuracy</div>
           <div className={'min-w-auto basis-[50%] items-center flex'}>
-            <ProgressBar percent={listing.review_scores.review_scores_accuracy * 10}/>
-            <span className={'ml-2'}>{listing.review_scores.review_scores_accuracy}</span>
+            <ProgressBar percent={data?.listing.review_scores.review_scores_accuracy * 10}/>
+            <span className={'ml-2'}>{data?.listing.review_scores.review_scores_accuracy}</span>
           </div>
         </div>
         <div className={'flex items-center justify-between'}>
           <div className={'basis-auto'}>Communication</div>
           <div className={'min-w-auto basis-[50%] items-center flex'}>
-            <ProgressBar percent={listing.review_scores.review_scores_communication * 10}/>
-            <span className={'ml-2'}>{listing.review_scores.review_scores_communication}</span>
+            <ProgressBar percent={data?.listing.review_scores.review_scores_communication * 10}/>
+            <span className={'ml-2'}>{data?.listing.review_scores.review_scores_communication}</span>
           </div>
         </div>
         <div className={'flex items-center justify-between'}>
           <div className={'basis-auto'}>Location</div>
           <div className={'min-w-auto basis-[50%] items-center flex'}>
-            <ProgressBar percent={listing.review_scores.review_scores_location * 10}/>
-            <span className={'ml-2'}>{listing.review_scores.review_scores_location}</span>
+            <ProgressBar percent={data?.listing.review_scores.review_scores_location * 10}/>
+            <span className={'ml-2'}>{data?.listing.review_scores.review_scores_location}</span>
           </div>
         </div>
         <div className={'flex items-center justify-between'}>
           <div className={'basis-auto'}>Check-in</div>
           <div className={'min-w-auto basis-[50%] items-center flex'}>
-            <ProgressBar percent={listing.review_scores.review_scores_checkin * 10}/>
-            <span className={'ml-2'}>{listing.review_scores.review_scores_checkin}</span>
+            <ProgressBar percent={data?.listing.review_scores.review_scores_checkin * 10}/>
+            <span className={'ml-2'}>{data?.listing.review_scores.review_scores_checkin}</span>
           </div>
         </div>
         <div className={'flex items-center justify-between'}>
           <div className={'basis-auto'}>Value</div>
           <div className={'min-w-auto basis-[50%] items-center flex'}>
-            <ProgressBar percent={listing.review_scores.review_scores_value * 10}/>
-            <span className={'ml-2'}>{listing.review_scores.review_scores_value}</span>
+            <ProgressBar percent={data?.listing.review_scores.review_scores_value * 10}/>
+            <span className={'ml-2'}>{data?.listing.review_scores.review_scores_value}</span>
           </div>
         </div>
       </>
     )
   }
 
-  if(error) {
-    console.error(`Error ${error}`);
-    return <h1 className={'text-3xl'}>Error Loading Listing. Error details logged to console.</h1>
-  }
-
   const renderReviewCount = () => {
     return (
       <div className={'flex items-center'}>
-        { listing.number_of_reviews ?
+        { data?.listing.number_of_reviews ?
           <>
             <AiFillStar className={'mr-1 w-4 h-4'}/>
-            {(listing.review_scores.review_scores_rating / 100 * 5).toFixed(2)}
+            {(data?.listing.review_scores.review_scores_rating / 100 * 5).toFixed(2)}
             <span className={'font-bold px-1'}>·</span>
-            <button onClick={openReviewDialog} className={'underline'}>{listing.number_of_reviews} reviews</button>
+            <button onClick={openReviewDialog} className={'underline'}>{data?.listing.number_of_reviews} reviews</button>
           </>
           :
           <span>No reviews yet</span>
@@ -248,26 +263,31 @@ const Listing = ({listing,amenities,error, roomImages}) => {
 
   return (
     <>
-      <NavBar className={'shadow max-w-[1280px]'}/>
+      <div className={`w-full shadow flex justify-center`}>
+        <div className={'w-full max-w-[1280px] flex justify-between items-center px-6 md:px-[40px] lg:px-[80px]'}>
+          <Link href={'/'} className={'px-4 py-2 bg-primary text-light my-2 rounded-3xl'}>SkyBnB</Link>
+          <AccountMenu/>
+        </div>
+      </div>
       <div className={'flex justify-center w-full'}>
-        <div className={'w-full max-w-[1280px] px-[40px] lg:px-[80px]'}>
+        <div className={'w-full max-w-[1280px] px-6 md:px-[40px] lg:px-[80px]'}>
           <div className={'flex flex-col-reverse md:flex-col'}>
             <div>
-              <h1 className={'text-3xl pt-6 '}>{listing.name}</h1>
+              <h1 className={'text-3xl pt-6 '}>{data?.listing.name}</h1>
               <div className={'flex items-center mt-2'}>
                 { renderReviewCount() }
                 <span className={'font-bold px-1'}>·</span>
-                { listing.host_is_superhost &&
+                { data?.listing.host_is_superhost &&
                   <span>
                     <AiOutlineTrophy/> Superhost
                     <span className={'font-bold px-1'}>·</span>
                   </span>
                 }
-                <span className={'underline'}>{listing.address.street}</span>
+                <span className={'underline'}>{data?.listing.address.street}</span>
               </div>
             </div>
             <div className={'grid grid-cols-1 grid-rows-1 sm:grid-cols-4 sm:grid-rows-2 gap-2 pt-6'}>
-              <Image className={'rounded-xl sm:rounded-r-none sm:rounded-l-xl col-span-2 row-span-2 w-full h-full object-cover'} src={listing.images.picture_url} width={560} height={560} alt={''}/>
+              <Image className={'rounded-xl sm:rounded-r-none sm:rounded-l-xl col-span-2 row-span-2 w-full h-full object-cover'} src={data?.listing.images.picture_url} width={560} height={560} alt={''}/>
               { roomImages && roomImages.map((roomImage, index) =>
                 <Image
                   key={roomImage.id}
@@ -281,14 +301,38 @@ const Listing = ({listing,amenities,error, roomImages}) => {
             <div className={'w-full md:w-7/12'}>
               <div className={'flex justify-between py-6 md:pt-12'}>
                 <div>
-                  <div className={'text-2xl'}>{listing.property_type} hosted by {listing.host.host_name}</div>
-                  <div>{listing.guests_included} guest{listing.guests_included > 1 ? "s" : ""} · {listing.bedrooms > 0 && `${listing.bedrooms} bedroom${listing.bedrooms > 1 ? "s" : ""} · `}
-                    {listing.beds} bed{listing.beds > 1 ? "s" : ""} · {listing.bathrooms} bath
-                    {listing.bathrooms > 1 && "s"}</div>
+                  <div className={'text-2xl'}>{data?.listing.property_type} hosted by {data?.listing.host.host_name}</div>
+                  <div>{data?.listing.guests_included} guest{data?.listing.guests_included > 1 ? "s" : ""} · {data?.listing.bedrooms > 0 && `${data?.listing.bedrooms} bedroom${data?.listing.bedrooms > 1 ? "s" : ""} · `}
+                    {data?.listing.beds} bed{data?.listing.beds > 1 ? "s" : ""} · {data?.listing.bathrooms} bath
+                    {data?.listing.bathrooms > 1 && "s"}</div>
                 </div>
-                <Image className={'rounded-full'} src={'https://thispersondoesnotexist.com/image'} width={56} height={56} alt={'AI Generated Host Image'}/>
+                <div className={'aspect-square'}>
+                  <Image className={'rounded-full'} src={'https://thispersondoesnotexist.com/image'} width={56} height={56} alt={'AI Generated Host Image'}/>
+                </div>
               </div>
-              <Description listing={listing}/>
+
+              { (data?.listing.room_type || data?.listing.bed_type || data?.listing.cancellation_policy) &&
+                <section className={'border-t border-gray-300 py-4 md:py-6'}>
+                  { data?.listing.room_type &&
+                  <div>
+                    <h3 className={'flex items-center font-bold py-2'}><BsHouse className={'mr-2'}/>{data?.listing.room_type}</h3>
+                  </div>
+                  }
+                  { data?.listing.bed_type &&
+                    <div>
+                      <h3 className={'flex items-center font-bold py-2'}><BiBed className={'mr-2'}/>{ data?.listing.bed_type}</h3>
+                    </div>
+
+                  }
+                  { data?.listing.cancellation_policy &&
+                    <div>
+                      <h3 className={'flex items-center font-bold py-2'}><BsCalendarMonth className={'mr-2'}/>Cancellation Policy:&nbsp;<span className={'capitalize '}>{ data?.listing.cancellation_policy}</span></h3>
+                    </div>
+                  }
+                </section>
+              }
+
+              <Description listing={data?.listing}/>
               <Amenities amenities={amenities}/>
               <section className={'border-t border-gray-300 py-6 md:py-8'}>
                 <Calendar dates={dates} setDates={setDates}/>
@@ -298,46 +342,73 @@ const Listing = ({listing,amenities,error, roomImages}) => {
             <div className={'hidden w-1/3 md:block'}>
               <div className={'mt-12 mb-12 ml-[8%] rounded-xl sticky top-12 shadow border border-gray-300 p-6'}>
                 <div className={'flex justify-between flex-wrap mb-4'}>
-                  <p className={'text-lg font-bold'}>${listing.price} night</p>
+                  <p className={'text-lg font-bold'}>${data?.listing.price} night</p>
                   { renderReviewCount() }
                 </div>
 
                 <Popover>
-                  <Popover.Button
-                    className={'border border-black rounded-lg flex truncate w-full mb-4'}>
-                    <div className={'w-1/2 border-r border-black'}>
-                      <div className={'pt-1 pb-3 px-3'}>
-                        <p className={'text-[10px] uppercase pb-1 truncate'}>Check-in</p>
-                        { dates.startDate ?
-                          <p className={'truncate  text-sm'}>{dates.startDate.format('MM/DD/YYYY')}</p>
-                          :
-                          <p className={'truncate text-sm'}>Add date</p>
-                        }
-                      </div>
-                    </div>
-                    <div className={'w-1/2 truncate'}>
-                      <div className={'pt-1 pb-3 px-3 '}>
-                        <p className={'text-[10px] uppercase pb-1 truncate'}>Checkout</p>
-                        { dates.endDate ?
-                          <p className={'truncate text-sm'}>{dates.endDate.format('MM/DD/YYYY')}</p>
-                          :
-                          <p className={'truncate text-sm'}>Add date</p>
-                        }
-                      </div>
-                    </div>
-                  </Popover.Button>
-                  <Popover.Panel className={'absolute z-10 right-[50px] w-[660px] bg-white rounded shadow-full p-4'}>
-                    <Calendar dates={dates} setDates={setDates}/>
-                  </Popover.Panel>
+                  {({close}) => (
+                    <>
+                      <Popover.Button
+                        className={'border border-black rounded-t-lg flex truncate w-full hover:border-2 '}>
+                        <div className={'w-1/2 border-r border-black'}>
+                          <div className={'pt-1 pb-3 px-3'}>
+                            <p className={'text-[10px] uppercase pb-1 truncate'}>Check-in</p>
+                            { dates.startDate ?
+                              <p className={'truncate  text-sm'}>{dates.startDate.format('MM/DD/YYYY')}</p>
+                              :
+                              <p className={'truncate text-sm'}>Add date</p>
+                            }
+                          </div>
+                        </div>
+                        <div className={'w-1/2 truncate'}>
+                          <div className={'pt-1 pb-3 px-3 '}>
+                            <p className={'text-[10px] uppercase pb-1 truncate'}>Checkout</p>
+                            { dates.endDate ?
+                              <p className={'truncate text-sm'}>{dates.endDate.format('MM/DD/YYYY')}</p>
+                              :
+                              <p className={'truncate text-sm'}>Add date</p>
+                            }
+                          </div>
+                        </div>
+                      </Popover.Button>
+                      <Popover.Panel className={'absolute z-10 right-[50px] w-[660px] bg-white rounded shadow-full p-4'}>
+                        <Calendar dates={dates} setDates={setDates} onClose={close}/>
+                      </Popover.Panel>
+                    </>
+                  )}
                 </Popover>
 
-                <button>Guests</button>
+                <Popover>
+                  {({close}) => (
+                    <>
+                      <Popover.Button className={'mb-4 border border-black rounded-b-lg flex truncate w-full hover:border-2 pl-3 pr-12'}>
+                        <div className={''}>
+                          Guests
+                        </div>
+                      </Popover.Button>
+                      <Popover.Panel className={'absolute z-10 bg-white rounded shadow-full p-4'}>
+                        <div className={'flex justify-between'}>
+                          <div>
+                            <div>Adults</div>
+                            <div>Age 13+</div>
+                          </div>
+                          <div>
+                            <button className={'rounded-full border p-1'}><AiOutlinePlus/></button>
+                            <button className={'rounded-full border p-1'}><AiOutlinePlus/></button>
+                          </div>
+                        </div>
+
+                      </Popover.Panel>
+                    </>
+                  )}
+                </Popover>
 
                 <div className={'flex justify-between w-full'}>
                   <span>Cleaning Fee</span>
-                  <span>${listing.cleaning_fee}</span>
+                  <span>${data?.listing.cleaning_fee}</span>
                 </div>
-                <div>Security Deposit: ${listing.security_deposit}</div>
+                <div>Security Deposit: ${data?.listing.security_deposit}</div>
 
                 <button className={'py-2 px-4 rounded-xl bg-primary text-light'}>Reserve</button>
               </div>
@@ -345,12 +416,13 @@ const Listing = ({listing,amenities,error, roomImages}) => {
 
           </div>
 
-          { listing.reviews && listing.reviews.length !== 0 &&
+          {/*Review Section*/}
+          { data?.listing.reviews && data?.listing.reviews.length !== 0 &&
             <section className={'border-t border-gray-300 py-6 md:py-8 flex flex-col'}>
               <h2 className={'text-xl flex items-center font-bold pb-4'}>
                 <StarIcon className={'mr-4 w-4 h-4'}/>
-                {(listing.review_scores.review_scores_rating / 100 * 5).toFixed(1)}
-                {' '}·{' '}{listing.reviews.length} reviews
+                {(data?.listing.review_scores.review_scores_rating / 100 * 5).toFixed(1)}
+                {' '}·{' '}{data?.listing.reviews.length} reviews
               </h2>
 
               <div className={'grid grid-cols-1 md:grid-cols-2 gap-2'}>
@@ -358,16 +430,15 @@ const Listing = ({listing,amenities,error, roomImages}) => {
               </div>
 
               <ul className={'grid sm:grid-cols-2 grid-cols-1 gap-4 mt-4'}>
-                { listing.reviews?.map((review, index) =>
+                { data?.listing.reviews?.map((review, index) =>
                   <Fragment key={review.id}>
                     { index < 6 &&
                       <li className={'my-2'}>
-                        <div className={'flex'}>
+                        <div className={'flex mb-4'}>
                           <Image className={'mr-2 rounded-full'} alt={''} width={52} height={52} src={`https://i.pravatar.cc/52?${index}`}/>
                           <div>
                             <p className={'font-bold'}>{review.reviewer_name}</p>
                             <p>{`${(new Date(review.date)).getMonth()+1}/${(new Date(review.date)).getDay()+1}/${(new Date(review.date)).getFullYear()}`}</p>
-
                           </div>
                         </div>
                         <p className={'line-clamp-4'}>{review.comments}</p>
@@ -377,9 +448,9 @@ const Listing = ({listing,amenities,error, roomImages}) => {
                 )}
               </ul>
 
-              { listing.reviews.length > 6 &&
-                <div className={'w-full flex justify-center'}>
-                  <button className={'border border-black rounded px-4 py-2'} onClick={openReviewDialog}>Read All {listing.reviews.length} Reviews</button>
+              { data?.listing.reviews.length > 6 &&
+                <div className={'w-full mt-2'}>
+                  <button className={'border border-black rounded px-4 py-2 w-full sm:w-auto'} onClick={openReviewDialog}>Read All {data?.listing.reviews.length} Reviews</button>
                 </div>
               }
             </section>
@@ -387,11 +458,11 @@ const Listing = ({listing,amenities,error, roomImages}) => {
 
           <section className={'border-t border-gray-300 py-6 md:py-8'}>
             <h2 className={'text-xl my-4'}>Where you&apos;ll be</h2>
-            <GoogleMap lat={listing.address.location.coordinates[1]} lang={listing.address.location.coordinates[0]}/>
-            <h3 className={'font-bold my-4'}>{listing.address.street}</h3>
-            { listing.neighborhood_overview &&
+            <GoogleMap lat={data?.listing.address.location.coordinates[1]} lang={data?.listing.address.location.coordinates[0]}/>
+            <h3 className={'font-bold my-4'}>{data?.listing.address.street}</h3>
+            { data?.listing.neighborhood_overview &&
               <>
-                <p className={'line-clamp-3'}>{listing.neighborhood_overview}</p>
+                <p className={'line-clamp-3'}>{data?.listing.neighborhood_overview}</p>
                 <button onClick={openNeighborhoodModal} className={'underline my-4'}>Learn More</button>
               </>
             }
@@ -399,33 +470,51 @@ const Listing = ({listing,amenities,error, roomImages}) => {
           </section>
 
           <section>
-            <div className={'flex'}>
+            <div className={'flex w-full justify-between'}>
+              <h2 className={'text-xl'}>Hosted by {data?.listing.host.host_name}</h2>
               <Image className={'rounded-full'} src={'https://thispersondoesnotexist.com/image'} width={64} height={64} alt={'AI Generated Host Image'}/>
-              <h2 className={'text-xl'}>Hosted by {listing.host.host_name}</h2>
             </div>
               <div className={'grid grid-cols-1 md:grid-cols-2 grid-rows-1 gap-4'}>
-                { listing.host.host_about &&
+                { data?.listing.host.host_about &&
                   <div>
                     <h3>About this host</h3>
-                    <p>{listing.host.host_about}</p>
+                    <p>{data?.listing.host.host_about}</p>
                   </div>
                 }
                 <div className={'ml-[8%]'}>
-                  {listing.host.host_response_rate && <p>Response rate: {listing.host.host_response_rate}</p>}
-                  {listing.host.host_response_time && <p>Response time: {listing.host.host_response_time}</p>}
+                  {data?.listing.host.host_response_rate && <p>Response rate: {data?.listing.host.host_response_rate}</p>}
+                  {data?.listing.host.host_response_time && <p>Response time: {data?.listing.host.host_response_time}</p>}
                 </div>
               </div>
 
           </section>
         </div>
       </div>
+
+      {/*Footer*/}
       <div className={'bottom-0 bg-gray-100 p-4'}>
         Footer
       </div>
-      <div className={'sticky bottom-0'}>
-        <button>Reserve</button>
+      {/*Extra sticky for mobile*/}
+      <div className={'sticky bottom-0 block md:hidden bg-white p-4 flex justify-between'}>
+        <div>
+          <div>
+            <span className={'font-bold'}>{data?.listing.price} </span><span>night</span>
+            { dates.startDate && dates.endDate ?
+              <div className={'underline'}>
+                {dates.startDate.format("MMM D")} - {dates.endDate.format("MMM D")}
+              </div>
+              :
+              <div>
+
+              </div>
+            }
+          </div>
+        </div>
+        <button className={'bg-primary text-white rounded-lg py-2 px-4'}>Reserve</button>
       </div>
 
+      {/*Review Modal*/}
       <Modal show={showReviewDialog} onClose={closeReviewDialog} title={"Reviews"}>
         <div className={'grid grid-cols-1 md:grid-cols-2 grid-rows-1 relative'}>
           <div>
@@ -437,7 +526,7 @@ const Listing = ({listing,amenities,error, roomImages}) => {
           </div>
           </div>
           <ul className={'bg-white '}>
-            { listing.reviews?.map(review =>
+            { data?.listing.reviews?.map(review =>
               <li key={review.id} className={'mb-4'}>
                 <p className={'font-bold'}>{review.reviewer_name}</p>
                 <p>{`${(new Date(review.date)).getMonth()+1}/${(new Date(review.date)).getDay()+1}/${(new Date(review.date)).getFullYear()}`}</p>
@@ -452,12 +541,12 @@ const Listing = ({listing,amenities,error, roomImages}) => {
         <div className={'flex'}>
           <div className={'basis-[400px]'}>
             <h3 className={'text-xl mb-4'}>Neighborhood</h3>
-            <p>{listing.neighborhood_overview}</p>
+            <p>{data?.listing.neighborhood_overview}</p>
             <h3 className={'text-xl my-4'}>Transit</h3>
-            <p>{listing.transit}</p>
+            <p>{data?.listing.transit}</p>
           </div>
           <div className={'w-[500px] h-full'}>
-            <GoogleMap lat={listing.address.location.coordinates[1]} lang={listing.address.location.coordinates[0]}/>
+            <GoogleMap lat={data?.listing.address.location.coordinates[1]} lang={data?.listing.address.location.coordinates[0]}/>
           </div>
         </div>
       </Modal>
@@ -473,41 +562,46 @@ const Description = ({listing}) => {
   const closeDescriptionModal = () => setShowDescriptionModal(false);
 
   return (
-    <section className={'border-t border-gray-300 py-6 md:py-8'}>
-      { listing.summary ?
-        <p>{listing.summary}</p>
-        :
-        <p>{listing.description}</p>
-      }
-      <button onClick={openDescriptionModal} className={'underline mt-4'}>Learn more</button>
+    <>
+      { listing &&
+        <section className={'border-t border-gray-300 py-6 md:py-8'}>
+          { listing.summary ?
+            <p>{listing.summary}</p>
+            :
+            <p>{listing.description}</p>
+          }
+          <button onClick={openDescriptionModal} className={'underline mt-4'}>Learn more</button>
 
-      <Modal show={showDescriptionModal} onClose={closeDescriptionModal} title={'About this space'}>
-        { listing.description &&
-          <>
-            <h3 className={'font-bold'}>Description</h3>
-            <p className={'mb-4'}>{listing.description}</p>
-          </>
-        }
-        { listing.space &&
-          <>
-            <h3 className={'font-bold'}>Space</h3>
-            <p className={'mb-4'}>{listing.space}</p>
-          </>
-        }
-        { listing.notes &&
-          <>
-            <h3 className={'font-bold'}>Notes</h3>
-            <p className={'mb-4'}>{listing.notes}</p>
-          </>
-        }
-        { listing.access &&
-          <>
-            <h3 className={'font-bold'}>Guest Access</h3>
-            <p className={'mb-4'}>{listing.access}</p>
-          </>
-        }
-      </Modal>
-    </section>
+          <Modal show={showDescriptionModal} onClose={closeDescriptionModal} title={'About this space'}>
+            { listing.description &&
+              <>
+                <h3 className={'font-bold'}>Description</h3>
+                <p className={'mb-4'}>{listing.description}</p>
+              </>
+            }
+            { listing.space &&
+              <>
+                <h3 className={'font-bold'}>Space</h3>
+                <p className={'mb-4'}>{listing.space}</p>
+              </>
+            }
+            { listing.notes &&
+              <>
+                <h3 className={'font-bold'}>Notes</h3>
+                <p className={'mb-4'}>{listing.notes}</p>
+              </>
+            }
+            { listing.access &&
+              <>
+                <h3 className={'font-bold'}>Guest Access</h3>
+                <p className={'mb-4'}>{listing.access}</p>
+              </>
+            }
+          </Modal>
+        </section>
+      }
+    </>
+
   )
 }
 
@@ -517,36 +611,41 @@ const Amenities = ({amenities}) => {
   const closeAmenityModal = () => setShowAmenityModal(false);
 
   return (
-    <section className={'border-t border-gray-300 py-6 md:py-8 w-full'}>
-      <h2 className={'text-xl font-bold pb-4'}>Amenities</h2>
-      <ul className={'grid grid-cols-2 gap-2'}>
-        { amenities.map((item, index) => {
-          if(index < 8) {
-            let Icon = getIcon(item);
-            if (Icon) {
-              return <li className={'flex'} key={item}><Icon className={'w-6 h-6'}/>{item}</li>
-            }
+    <>
+      { amenities &&
+        <section className={'border-t border-gray-300 py-6 md:py-8 w-full'}>
+          <h2 className={'text-xl font-bold pb-4'}>Amenities</h2>
+          <ul className={'grid grid-cols-2 gap-2'}>
+            { amenities.map((item, index) => {
+              if(index < 8) {
+                let Icon = getIcon(item);
+                if (Icon) {
+                  return <li className={'flex'} key={item}><Icon className={'w-6 h-6'}/>{item}</li>
+                }
+              }
+              return null;
+            })}
+          </ul>
+          { amenities.length > 8 ?
+            <button className={'border border-black rounded px-4 py-2 mt-6 w-full sm:w-auto'} onClick={openAmenityModal}>Show all {amenities.length} amenities</button>
+            : null
           }
-          return null;
-        })}
-      </ul>
-      { amenities.length > 8 ?
-        <button className={'border border-black rounded px-4 py-2 mt-6 w-full sm:w-auto'} onClick={openAmenityModal}>Show all {amenities.length} amenities</button>
-        : null
-      }
 
-      <Modal show={showAmenityModal} onClose={closeAmenityModal} title={'Amenities'} className={'w-[780px]'}>
-        <ul className={''}>
-          { amenities.map((item, index) => {
-            let Icon = getIcon(item);
-            if (Icon) {
-              return <li className={'flex py-6 border-gray-300 border-b'} key={item}><Icon className={'w-6 h-6 mr-4'}/>{item}</li>
-            }
-            return null;
-          })}
-        </ul>
-      </Modal>
-    </section>
+          <Modal show={showAmenityModal} onClose={closeAmenityModal} title={'Amenities'} className={'w-[780px]'}>
+            <ul className={''}>
+              { amenities.map((item, index) => {
+                let Icon = getIcon(item);
+                if (Icon) {
+                  return <li className={'flex py-6 border-gray-300 border-b'} key={item}><Icon className={'w-6 h-6 mr-4'}/>{item}</li>
+                }
+                return null;
+              })}
+            </ul>
+          </Modal>
+        </section>
+      }
+    </>
+
   )
 }
 
