@@ -2,7 +2,20 @@ import {useEffect, useState} from "react";
 import dayjs, {Dayjs} from "dayjs";
 import {FiChevronLeft, FiChevronRight} from "react-icons/fi";
 
-const Calendar = ({dates, setDates}) => {
+interface Dates {
+  startDate: Dayjs;
+  endDate: Dayjs;
+}
+
+interface Props {
+  dates: Dates;
+  setDates: (Dates) => void;
+  onClose?: () => void;
+}
+
+
+
+const Calendar = ({dates, setDates, onClose} : Props) => {
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const currentDate = dayjs();
 
@@ -134,12 +147,15 @@ const Calendar = ({dates, setDates}) => {
             {renderCalendar(selectedDate.add(1, "month"))}
           </div>
         </div>
-        <div>
+        <div className={'flex justify-end items-center mt-4'}>
           <button
-            className={'underline w-full flex justify-end'}
+            className={'underline w-full flex justify-end mx-4'}
             onClick={() => {setDates({endDate: null, startDate: null})}}>
             Clear dates
           </button>
+          { onClose &&
+            <button onClick={onClose} className={'rounded-lg py-1 px-3 bg-black text-white'}>Close</button>
+          }
         </div>
       </div>
     </>
