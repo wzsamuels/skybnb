@@ -1,57 +1,23 @@
 import {gql, useQuery} from '@apollo/client'
 import Image from "next/image";
-import {
-  AiFillStar,
-  AiOutlineBell,
-  AiOutlineCoffee,
-  AiOutlineColumnWidth,
-  AiOutlineLock, AiOutlinePlus,
-  AiOutlineTrophy
-} from "react-icons/ai";
+import { AiFillStar, AiOutlineBell, AiOutlineCoffee, AiOutlineColumnWidth, AiOutlineLock, AiOutlineMinus,
+  AiOutlineTrophy } from "react-icons/ai";
 import {BsCalendarMonth, BsHouse, BsWifi} from "react-icons/bs"
 import {GrDownloadOption, GrElevator} from "react-icons/gr"
-import {
-  FaBabyCarriage,
-  FaFireExtinguisher,
-  FaIntercom,
-  FaLaptop,
-  FaNetworkWired,
-  FaPumpSoap, FaRegLightbulb, FaShower,
-  FaWater, FaWheelchair
-} from "react-icons/fa"
-import {
-  GiArchiveRegister, GiCat, GiChickenOven,
-  GiCookingPot,
-  GiCooler,
-  GiHeatHaze, GiKnifeFork,
-  GiPerson,
-  GiPillow,
-  GiWashingMachine, GiWeightLiftingUp
-} from "react-icons/gi"
+import { FaBabyCarriage, FaFireExtinguisher, FaIntercom, FaLaptop, FaNetworkWired, FaPumpSoap, FaRegLightbulb, FaShower,
+  FaWater, FaWheelchair } from "react-icons/fa"
+import {GiArchiveRegister, GiCat, GiChickenOven, GiCookingPot, GiCooler, GiHeatHaze, GiKnifeFork, GiPerson, GiPillow,
+  GiWashingMachine, GiWeightLiftingUp } from "react-icons/gi"
 import {TbBeach, TbDeviceTvOld, TbGrill, TbHanger, TbMoodKid, TbParking, TbStairs, TbToolsKitchen} from "react-icons/tb"
-import {
-  MdCable,
-  MdEventAvailable,
-  MdKitchen,
-  MdLuggage, MdOutlineBedroomChild,
-  MdOutlineCleaningServices,
-  MdOutlineCoffeeMaker,
-  MdOutlineDry,
-  MdOutlineFreeBreakfast,
-  MdOutlineIron,
-  MdOutlineLocalLaundryService,
-  MdOutlineMicrowave, MdOutlineMiscellaneousServices, MdOutlinePrivacyTip, MdOutlineToys,
-  MdPets, MdPool, MdRoom,
-  MdSmokingRooms,
-  MdWbShade
-} from "react-icons/md"
-import { BiAlarmExclamation, BiBed, BiFirstAid } from "react-icons/bi";
+import {MdCable, MdEventAvailable, MdKitchen, MdLuggage, MdOutlineBedroomChild, MdOutlineCleaningServices,
+  MdOutlineCoffeeMaker, MdOutlineDry, MdOutlineFreeBreakfast, MdOutlineIron, MdOutlineLocalLaundryService,
+  MdOutlineMicrowave, MdOutlineMiscellaneousServices, MdOutlinePrivacyTip, MdOutlineToys, MdPets, MdPool, MdSmokingRooms,
+  MdWbShade } from "react-icons/md"
+import {BiAlarmExclamation, BiBed, BiFirstAid, BiPlus} from "react-icons/bi";
 import {CgSmartHomeRefrigerator, CgSmartHomeWashMachine} from "react-icons/cg"
 import {FiClock} from "react-icons/fi";
 import {RiAlarmWarningLine} from "react-icons/ri";
 import {Fragment, useEffect, useState} from "react";
-import NavBar from "../../components/NavBar";
-import apolloClient from "../../lib/apollo";
 import ProgressBar from "../../components/Progress";
 import {StarIcon} from "@heroicons/react/20/solid";
 import Modal from "../../components/Modal";
@@ -68,10 +34,7 @@ const GetListing = gql`
   query GetListing($query: ListingInput!) {
     listing(query: $query) {
       id
-
-
       bed_type
-
       name      
       summary
       space
@@ -82,7 +45,6 @@ const GetListing = gql`
       access
       house_rules
       accommodates
-      
       house_rules
       property_type
       room_type
@@ -90,8 +52,6 @@ const GetListing = gql`
       minimum_nights
       maximum_nights
       cancellation_policy
-        
-      guests_included
       bedrooms
       beds
       number_of_reviews
@@ -99,12 +59,15 @@ const GetListing = gql`
       price
       security_deposit
       cleaning_fee
+      extra_people
+      guests_included
       host {
         host_name
         host_about
         host_response_time
         host_response_rate
         host_is_superhost
+        host_listings_count
       }
       images {
           picture_url
@@ -158,12 +121,14 @@ const Listing = ({id}) => {
   const openReviewDialog = () => setShowReviewDialog(true);
   const closeReviewDialog = () => setShowReviewDialog(false);
 
-  const { data, error,loading } = useQuery(GetListing,{variables: {query: {id}}});
+  const { data, error } = useQuery(GetListing,{variables: {query: {id}}});
   const [roomImages, setRoomImages] = useState(null);
   const [dates, setDates] = useState({startDate: null, endDate: null});
-  const [guests, setGuests] = useState({adults: 0,  children: 0, infants: 0, pets: 0});
+  const [guests, setGuests] = useState({adults: 1,  children: 0, infants: 0, pets: 0});
   // @ts-ignore
   const amenities = data ? [...new Set(data?.listing.amenities)] : null;
+
+  const nights = dates.endDate && dates.startDate ? dates.endDate.diff(dates.startDate, 'day') : null;
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -311,6 +276,11 @@ const Listing = ({id}) => {
                 </div>
               </div>
 
+              <div>
+                <div>Accommodates: {data?.listing.accommodates}</div>
+                <div>Guests: {data?.listing.guests_included}</div>
+              </div>
+
               { (data?.listing.room_type || data?.listing.bed_type || data?.listing.cancellation_policy) &&
                 <section className={'border-t border-gray-300 py-4 md:py-6'}>
                   { data?.listing.room_type &&
@@ -335,6 +305,13 @@ const Listing = ({id}) => {
               <Description listing={data?.listing}/>
               <Amenities amenities={amenities}/>
               <section className={'border-t border-gray-300 py-6 md:py-8'}>
+                <h2 className={'text-xl'}>
+                  {!dates.startDate && !dates.endDate && "Select a Check-In Date"}
+                  {dates.startDate && !dates.endDate && "Select a Check-Out Date"}
+                  {dates.startDate && dates.endDate &&
+                    <span>{nights} night{nights > 1 ? 's' : ''} in {data?.listing.address.street.split(',')[0]}</span>
+                  }
+                </h2>
                 <Calendar dates={dates} setDates={setDates}/>
               </section>
             </div>
@@ -346,71 +323,140 @@ const Listing = ({id}) => {
                   { renderReviewCount() }
                 </div>
 
+                {/*Calendar Popover*/}
                 <Popover>
                   {({close}) => (
                     <>
                       <Popover.Button
                         className={'border border-black rounded-t-lg flex truncate w-full hover:border-2 '}>
-                        <div className={'w-1/2 border-r border-black'}>
-                          <div className={'pt-1 pb-3 px-3'}>
-                            <p className={'text-[10px] uppercase pb-1 truncate'}>Check-in</p>
+                        <div className={'w-1/2 border-r border-black relative'}>
+                          <div className={'pt-[26px] pb-[10px] px-3'}>
+                            <p className={'text-[10px] uppercase truncate absolute top-2'}>Check-in</p>
                             { dates.startDate ?
-                              <p className={'truncate  text-sm'}>{dates.startDate.format('MM/DD/YYYY')}</p>
+                              <p className={'truncate text-sm text-left'}>{dates.startDate.format('MM/DD/YYYY')}</p>
                               :
-                              <p className={'truncate text-sm'}>Add date</p>
+                              <div className={'truncate text-sm text-left'}>Add date</div>
                             }
                           </div>
                         </div>
-                        <div className={'w-1/2 truncate'}>
-                          <div className={'pt-1 pb-3 px-3 '}>
-                            <p className={'text-[10px] uppercase pb-1 truncate'}>Checkout</p>
+                        <div className={'w-1/2 truncate relative'}>
+                          <div className={'pt-[26px] pb-[10px] px-3'}>
+                            <p className={'text-[10px] uppercase pb-1 truncate absolute top-2'}>Checkout</p>
                             { dates.endDate ?
-                              <p className={'truncate text-sm'}>{dates.endDate.format('MM/DD/YYYY')}</p>
+                              <p className={'truncate text-sm text-left'}>{dates.endDate.format('MM/DD/YYYY')}</p>
                               :
-                              <p className={'truncate text-sm'}>Add date</p>
+                              <p className={'truncate text-sm text-left'}>Add date</p>
                             }
                           </div>
                         </div>
                       </Popover.Button>
-                      <Popover.Panel className={'absolute z-10 right-[50px] w-[660px] bg-white rounded shadow-full p-4'}>
+                      <Popover.Panel className={'absolute z-30 right-[50px] w-[660px] bg-white rounded shadow-full p-4'}>
                         <Calendar dates={dates} setDates={setDates} onClose={close}/>
                       </Popover.Panel>
                     </>
                   )}
                 </Popover>
 
-                <Popover>
-                  {({close}) => (
+                {/*Guest Popover*/}
+                <Popover className={'relative'}>
+                  {({open, close}) => (
                     <>
-                      <Popover.Button className={'mb-4 border border-black rounded-b-lg flex truncate w-full hover:border-2 pl-3 pr-12'}>
-                        <div className={''}>
+                      <Popover.Button className={'mb-4 relative border border-black rounded-b-lg flex truncate w-full hover:border-2 pl-3 pr-12 pt-[26px] pb-[10px]'}>
+                        <div className={'absolute uppercase top-2 left-[12px] text-xs'}>
                           Guests
                         </div>
+                        <div className={'truncate'}>
+                          <span>{guests.adults + guests.children} guests{guests.infants ? `, ${guests.infants} infant${guests.infants > 1 ? 's' : ''}` : ``}</span><span></span>
+                        </div>
                       </Popover.Button>
-                      <Popover.Panel className={'absolute z-10 bg-white rounded shadow-full p-4'}>
-                        <div className={'flex justify-between'}>
+                      <Popover.Panel className={'absolute z-10 bg-white rounded shadow-full p-4 w-full min-w-[280px] right-0 top-14'}>
+                        <div className={'flex justify-between mb-4'}>
                           <div>
                             <div>Adults</div>
-                            <div>Age 13+</div>
+                            <div className={'text-sm'}>Age 13+</div>
                           </div>
-                          <div>
-                            <button className={'rounded-full border p-1'}><AiOutlinePlus/></button>
-                            <button className={'rounded-full border p-1'}><AiOutlinePlus/></button>
+                          <div className={'flex items-center'}>
+                            <button
+                              onClick={() => setGuests({...guests, adults: guests.adults -1})}
+                              disabled={guests.adults === 0}
+                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><AiOutlineMinus className={'text-black'}/></button>
+                            <div className={'mx-2'}>{guests.adults}</div>
+                            <button
+                              onClick={() => setGuests({...guests, adults: guests.adults + 1})}
+                              disabled={guests.adults + guests.children === data?.listing.accommodates}
+                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><BiPlus/></button>
                           </div>
                         </div>
 
+                        <div className={'flex justify-between mb-4'}>
+                          <div>
+                            <div>Children</div>
+                            <div className={'text-sm'}>Ages 2-12</div>
+                          </div>
+                          <div className={'flex items-center'}>
+                            <button
+                              onClick={() => setGuests({...guests, children: guests.children - 1})}
+                              disabled={guests.children === 0}
+                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><AiOutlineMinus className={'text-black'}/></button>
+                            <div className={'mx-2'}>{guests.children}</div>
+                            <button
+                              onClick={() => setGuests({...guests, children: guests.children + 1})}
+                              disabled={guests.adults + guests.children === data?.listing.accommodates}
+                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><BiPlus/></button>
+                          </div>
+                        </div>
+
+                        <div className={'flex justify-between mb-4'}>
+                          <div>
+                            <div>Infants</div>
+                            <div className={'text-sm'}>Under 2</div>
+                          </div>
+                          <div className={'flex items-center'}>
+                            <button
+                              onClick={() => setGuests({...guests, infants: guests.infants - 1})}
+                              disabled={guests.infants === 0}
+                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><AiOutlineMinus className={'text-black'}/></button>
+                            <div className={'mx-2'}>{guests.infants}</div>
+                            <button
+                              onClick={() => setGuests({...guests, infants: guests.infants + 1})}
+                              disabled={guests.infants === 5}
+                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><BiPlus/></button>
+                          </div>
+                        </div>
+
+                        <div className={'text-sm mb-4'}>
+                          This place has a maximum of {data?.listing.accommodates} guests, not including infants.
+                        </div>
+                        <div className={'w-full flex justify-end'}>
+                          <button onClick={close} className={'underline'}>Close</button>
+                        </div>
                       </Popover.Panel>
                     </>
                   )}
                 </Popover>
 
+                <button className={'py-2 px-4 rounded-xl bg-primary text-light w-full mb-4'}>Reserve</button>
+                <div className={'flex justify-between w-full'}>
+                  <span>${data?.listing.price} x {nights}</span>
+                  <span>${data?.listing.price * nights}</span>
+                </div>
                 <div className={'flex justify-between w-full'}>
                   <span>Cleaning Fee</span>
                   <span>${data?.listing.cleaning_fee}</span>
                 </div>
-                <div>Security Deposit: ${data?.listing.security_deposit}</div>
+                <div className={'flex justify-between w-full'}>
+                  <span>Security Deposit</span>
+                  <span>${data?.listing.security_deposit}</span>
+                </div>
+                { guests.adults + guests.children > data?.listing.guests_included ?
+                  <div className={'flex justify-between w-full'}>
+                    <span>Extra Guests</span>
+                    <span>${data?.listing.extra_people}</span>
+                  </div>
+                  : null
+                }
 
-                <button className={'py-2 px-4 rounded-xl bg-primary text-light'}>Reserve</button>
+
               </div>
             </div>
 
@@ -469,23 +515,29 @@ const Listing = ({id}) => {
 
           </section>
 
-          <section>
-            <div className={'flex w-full justify-between'}>
-              <h2 className={'text-xl'}>Hosted by {data?.listing.host.host_name}</h2>
-              <Image className={'rounded-full'} src={'https://thispersondoesnotexist.com/image'} width={64} height={64} alt={'AI Generated Host Image'}/>
-            </div>
-              <div className={'grid grid-cols-1 md:grid-cols-2 grid-rows-1 gap-4'}>
-                { data?.listing.host.host_about &&
-                  <div>
-                    <h3>About this host</h3>
-                    <p>{data?.listing.host.host_about}</p>
-                  </div>
+          <section className={'border-t border-gray-300 py-6 md:py-8'}>
+            <div className={'flex flex-row w-full justify-between md:justify-end md:flex-row-reverse'}>
+              <div>
+                <h2 className={'text-xl'}>Hosted by {data?.listing.host.host_name}</h2>
+                {data?.listing.host.host_listings_count ?
+                  <div>{data.listing.host.host_listings_count} listings</div>
+                  :
+                  null
                 }
-                <div className={'ml-[8%]'}>
-                  {data?.listing.host.host_response_rate && <p>Response rate: {data?.listing.host.host_response_rate}</p>}
-                  {data?.listing.host.host_response_time && <p>Response time: {data?.listing.host.host_response_time}</p>}
-                </div>
               </div>
+              <Image className={'rounded-full  md:mr-4'} src={'https://thispersondoesnotexist.com/image'} width={64} height={64} alt={'AI Generated Host Image'}/>
+            </div>
+            <div className={'grid grid-cols-1 md:grid-cols-2 grid-rows-1 gap-4'}>
+              { data?.listing.host.host_about &&
+                <div>
+                  <p className={'mt-2 mb-4'}>{data?.listing.host.host_about}</p>
+                </div>
+              }
+              <div className={`${data?.listing.host.host_about ? 'md:ml-[8%]' : ''} `}>
+                {data?.listing.host.host_response_rate && <p>Response rate: {data?.listing.host.host_response_rate}%</p>}
+                {data?.listing.host.host_response_time && <p>Response time: {data?.listing.host.host_response_time}</p>}
+              </div>
+            </div>
 
           </section>
         </div>
@@ -496,17 +548,17 @@ const Listing = ({id}) => {
         Footer
       </div>
       {/*Extra sticky for mobile*/}
-      <div className={'sticky bottom-0 block md:hidden bg-white p-4 flex justify-between'}>
+      <div className={'sticky z-50 bottom-0 block md:hidden bg-white p-4 flex justify-between border border-t-gray-300'}>
         <div>
           <div>
-            <span className={'font-bold'}>{data?.listing.price} </span><span>night</span>
+            <span className={'font-bold'}>${data?.listing.price} </span><span>night</span>
             { dates.startDate && dates.endDate ?
               <div className={'underline'}>
                 {dates.startDate.format("MMM D")} - {dates.endDate.format("MMM D")}
               </div>
               :
               <div>
-
+                { renderReviewCount() }
               </div>
             }
           </div>
@@ -633,7 +685,7 @@ const Amenities = ({amenities}) => {
 
           <Modal show={showAmenityModal} onClose={closeAmenityModal} title={'Amenities'} className={'w-[780px]'}>
             <ul className={''}>
-              { amenities.map((item, index) => {
+              { amenities.map((item) => {
                 let Icon = getIcon(item);
                 if (Icon) {
                   return <li className={'flex py-6 border-gray-300 border-b'} key={item}><Icon className={'w-6 h-6 mr-4'}/>{item}</li>

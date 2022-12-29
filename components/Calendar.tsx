@@ -18,6 +18,7 @@ interface Props {
 const Calendar = ({dates, setDates, onClose} : Props) => {
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const currentDate = dayjs();
+  const nights = dates.endDate && dates.startDate ? dates.endDate.diff(dates.startDate, 'day') : null;
 
   const handleLeftButton = () => {
     setSelectedDate(state => state.subtract(1, "month"));
@@ -98,11 +99,12 @@ const Calendar = ({dates, setDates, onClose} : Props) => {
       const style = day.isSame(dates.startDate, 'day') ? 'right-0' : 'left-0';
       return (
         <div className={'relative'}>
+          {dates.startDate && dates.endDate && <div className={`absolute ${style} bg-gray-100 w-1/2 h-full top-0`}/>}
           <button
             onClick={() => handleDateClick(day)}
-            className={'z-20 relative aspect-square shadow-xl max-w-full max-h-full w-full h-full flex p-2 justify-center items-center rounded-full bg-black text-light hover:cursor-pointer'}>{day.date()}
+            className={'relative aspect-square shadow-xl max-w-full max-h-full w-full h-full flex p-2 justify-center items-center rounded-full bg-black text-light hover:cursor-pointer'}>{day.date()}
           </button>
-          {dates.startDate && dates.endDate && <div className={`z-10 absolute ${style} bg-gray-100 w-1/2 h-full top-0`}/>}
+
         </div>
       )
     } else if(dates.startDate && dates.endDate && day.isBetween(dates.startDate,dates.endDate, 'day')) {
@@ -110,7 +112,7 @@ const Calendar = ({dates, setDates, onClose} : Props) => {
         <div className={'bg-gray-100'}>
           <button
             onClick={() => handleDateClick(day)}
-            className={` aspect-square rounded-full max-w-full max-h-full w-full h-full  flex p-2  justify-center items-center border border-gray-100 hover:border-gray-300 hover:cursor-pointer`}>
+            className={`aspect-square rounded-full max-w-full max-h-full w-full h-full  flex p-2  justify-center items-center border border-gray-100 hover:border-gray-300 hover:cursor-pointer`}>
             {day.date()}
           </button>
         </div>
@@ -129,12 +131,10 @@ const Calendar = ({dates, setDates, onClose} : Props) => {
 
   return (
     <>
-      <h2 className={'text-2xl'}>
-        {!dates.startDate && !dates.endDate && "Select a Check-In Date"}
-        {dates.startDate && !dates.endDate && "Select a Check-Out Date"}
-        {dates.startDate && dates.endDate && <span>{dates.endDate.diff(dates.startDate, 'day')} Nights</span>}
-      </h2>
+
       <div className={'relative'}>
+        {dates.startDate && dates.endDate ?
+          <div>{dates.startDate.format('MMMM D, YYYY')} - {dates.endDate.format('MMMM D, YYYY')}</div> : null}
         <div className={'flex justify-between my-4 absolute top-0 w-full px-2'}>
           <button className={'disabled:opacity-20'} onClick={handleLeftButton} disabled={selectedDate.month() === currentDate.month() && selectedDate.year() === currentDate.year()}><FiChevronLeft className={'w-6 h-6'}/></button>
           <button onClick={handleRightButton}><FiChevronRight className={'w-6 h-6'} /></button>
