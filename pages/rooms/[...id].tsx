@@ -22,12 +22,13 @@ import ProgressBar from "../../components/Progress";
 import {StarIcon} from "@heroicons/react/20/solid";
 import Modal from "../../components/Modal";
 import GoogleMap from "../../components/GoogleMap";
-import dayjs from "dayjs";
+
 import isBetween from 'dayjs/plugin/isBetween';
 import Calendar from "../../components/Calendar";
 import {Popover} from "@headlessui/react";
 import Link from "next/link";
 import AccountMenu from "../../components/AccountMenu";
+import dayjs from "dayjs";
 dayjs.extend(isBetween);
 
 const GetListing = gql`

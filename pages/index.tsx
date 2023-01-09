@@ -16,6 +16,7 @@ import Link from "next/link";
 import AccountMenu from "../components/AccountMenu";
 import useWindowDimensions from "../lib/useWindowDimensions"
 import Modal from "../components/Modal";
+import Slider from "../components/Slider";
 
 const icons = [
   {
@@ -142,6 +143,7 @@ export default function Home() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showLoadingPopup, setShowLoadingPopup] = useState(false);
 
+
   const { endCursor, hasNextPage } = data?.listings.pageInfo || {};
 
   const handleOnDocumentBottom = useCallback(() => {
@@ -183,7 +185,9 @@ export default function Home() {
       <header className={'sticky top-0 z-10 bg-white  shadow-lg'}>
         <div className={`flex justify-between items-center px-4`}>
           <Link href={'/'} className={'px-4 py-2 bg-primary text-light my-2 rounded-3xl'}>SkyBnB</Link>
-          <button className={'rounded-3xl px-6 py-2 border border-dark shadow-md opacity-70 hover:opacity-100'}>Filter</button>
+          <button
+            onClick={() => setShowFilterModal(true)}
+            className={'rounded-3xl px-6 py-2 border border-dark shadow-md opacity-70 hover:opacity-100'}>Filter</button>
           <AccountMenu/>
         </div>
         <hr/>
@@ -198,6 +202,8 @@ export default function Home() {
           </div>
         </div>
       }
+
+      <SliderTest/>
 
       <div className={'grid mx-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4'}>
         {data?.listings.edges.map((listing) =>
@@ -324,5 +330,25 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
         </div>
       }
     </div>
+  )
+}
+
+const SliderTest = () => {
+  const [sliderValue, setSliderValue] = useState({min: 20, max: 80})
+  const [sliderNumValue, setSliderNumValue] = useState(30)
+
+  return (
+    <>
+      <Slider min={0} max={100} value={sliderNumValue} setValue={setSliderNumValue}/>
+
+      <div className={'m-4'}>
+        {sliderNumValue.toFixed(0)}
+      </div>
+
+      <Slider min={0} max={100} value={sliderValue} setValue={setSliderValue}/>
+      <div className={'m-4'}>
+        {sliderValue.min.toFixed(0)}, {sliderValue.max.toFixed(0)}
+      </div>
+    </>
   )
 }
