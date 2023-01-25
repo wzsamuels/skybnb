@@ -1,50 +1,50 @@
-import {ComponentPropsWithoutRef, useCallback, useEffect, useRef, useState} from "react";
-import {number} from "prop-types";
-
-interface ValuePair {
-  min: number;
-  max: number
-}
-interface Props extends ComponentPropsWithoutRef<"div"> {
-  max: number;
-  min: number;
-  value: number | ValuePair;
-}
+import {useEffect, useRef, useState} from "react";
 
 const Slider = ({max, min, value, setValue}) => {
-  const sliderRef = useRef<HTMLDivElement>();
-  const barRef = useRef<HTMLDivElement>();
+  const sliderRef = useRef<HTMLDivElement>();     // The whole slider bar
+  const barRef = useRef<HTMLDivElement>();        // Just the colored part of the slider
   const buttonRef1 = useRef<HTMLButtonElement>();
   const buttonRef2 = useRef<HTMLButtonElement>();
+  const [sliderWidth, setSliderWidth] = useState(0)
   const [buttonPosition1, setButtonPosition1] = useState(0);
   const [buttonPosition2, setButtonPosition2] = useState(0);
   const [buttonClicked1, setButtonClicked1] = useState(false)
   const [buttonClicked2, setButtonClicked2] = useState(false)
 
-  const handleMouseMove = useCallback(event => {
-    if(buttonClicked1)  {
-      if(buttonPosition1 + event.movementX < sliderRef.current.clientWidth && buttonPosition1 + event.movementX >= 0  && !(buttonPosition2 && buttonPosition1 + event.movementX > buttonPosition2)) {
-        setButtonPosition1(state => state + event.movementX)
-        if(typeof value === "number") {
-          setValue((buttonPosition1 + event.movementX) / sliderRef?.current?.clientWidth * max)
-        } else {
-          setValue({...value, min: (buttonPosition1 + event.movementX) / sliderRef?.current?.clientWidth * max})
-        }
-      }
-    } else if(buttonClicked2) {
-      if(buttonPosition2 + event.movementX < sliderRef.current.clientWidth && buttonPosition2 + event.movementX >= 0 && buttonPosition2 + event.movementX > buttonPosition1) {
-        setButtonPosition2(state => state + event.movementX)
-        if(typeof value === "number") {
-          setValue((buttonPosition2 + event.movementX) / sliderRef?.current?.clientWidth * max)
-        } else {
-          setValue({...value, max: (buttonPosition2 + event.movementX) / sliderRef?.current?.clientWidth * max});
-        }
-        //setButtonPosition1(event.clientX - (event.screenX - event.pageX))
-      }
-    }
-  }, [buttonClicked1, buttonClicked2, buttonPosition1, buttonPosition2, max, setValue, value]);
+  useEffect(() => {
+    console.log("width", sliderRef.current.clientWidth)
+    setSliderWidth(sliderRef.current.clientWidth);
+  }, [])
 
   useEffect(() => {
+    /*
+    * Handle moving the slider buttons. Uses Mouse Move Event and manually tracks button ups and downs so that the buttons
+    * will move along the slider bar when the mouse button is held down but the cursor is not over the slider component.
+    */
+    const handleMouseMove = event => {
+      if(buttonClicked1)  {
+        // Check that the button isn't past the edges or the second button
+        if(buttonPosition1 + event.movementX < sliderWidth && buttonPosition1 + event.movementX >= 0  && !(buttonPosition2 && buttonPosition1 + 5 + event.movementX > buttonPosition2)) {
+          setButtonPosition1(state => state + event.movementX)
+          if(typeof value === "number") {
+            setValue((buttonPosition1 + event.movementX) / sliderWidth * max)
+          } else {
+            setValue({...value, min: (buttonPosition1 + event.movementX) / sliderWidth * max})
+          }
+        }
+      } else if(buttonClicked2) {
+        if(buttonPosition2 + event.movementX < sliderWidth && buttonPosition2 + event.movementX >= 0 && (buttonPosition2 + event.movementX - 5 > buttonPosition1)) {
+          setButtonPosition2(state => state + event.movementX)
+          if(typeof value === "number") {
+            setValue((buttonPosition2 + event.movementX) / sliderWidth * max)
+          } else {
+            setValue({...value, max: (buttonPosition2 + event.movementX) / sliderWidth * max});
+          }
+        }
+      }
+    }
+    
+    /* Handle clicking the slider buttons, the empty slider bar, and the filled slider bar*/
     const handleMouseDown = (event) => {
       if(buttonRef1.current === event.target) {
         setButtonClicked1(true);
@@ -52,17 +52,39 @@ const Slider = ({max, min, value, setValue}) => {
       if(buttonRef2.current === event.target) {
         setButtonClicked2(true);
       }
+      // Clicking any part of the slider has the same effect when there is only one button (moving the button to that point
       if((sliderRef.current === event.target || barRef.current === event.target ) && typeof value === "number") {
         setButtonPosition1(event.offsetX);
-        setValue(event.offsetX / sliderRef?.current?.clientWidth * max);
+        setValue(event.offsetX / sliderWidth * max);
+        setButtonClicked1(true);
       }
+      // If there are two buttons, behavior depends on positions of buttons
       if(typeof value === "object") {
         if(sliderRef.current === event.target) {
-          setButtonPosition1(event.offsetX);
-          setValue({...value, min: event.offsetX / sliderRef?.current?.clientWidth * max})
+          // When clicking on the slider past the 2nd button sets the 2nd button position
+          if(event.offsetX > buttonPosition2) {
+            setButtonPosition2(event.offsetX)
+            setValue({...value, max: event.offsetX / sliderWidth * max})
+          }
+          // Clicking before the 1st button sets the 1st button position
+          else {
+            setButtonPosition1(event.offsetX);
+            setValue({...value, min: event.offsetX / sliderWidth * max})
+          }
         } else if(barRef.current === event.target) {
-          setButtonPosition1(state => event.offsetX + state);
-          setValue({...value, min: (event.offsetX + buttonPosition1) / sliderRef?.current?.clientWidth * max})
+          if(buttonPosition1 !== buttonPosition2) {
+            console.log(buttonPosition1, buttonPosition2, event.offsetX)
+            let b1 = Math.abs((event.offsetX + buttonPosition1) - buttonPosition1);
+            let b2 = Math.abs((event.offsetX + buttonPosition1) - buttonPosition2);
+            console.log(b1, b2)
+            if(b1 <= b2 ) {
+              setButtonPosition1(state => event.offsetX + state);
+              setValue({...value, min: (event.offsetX + buttonPosition1) / sliderWidth * max})
+            } else {
+              setButtonPosition2(state => state - (barRef.current.clientWidth - event.offsetX));
+              setValue({...value, max: (buttonPosition2 - (barRef.current.clientWidth - event.offsetX)) / sliderWidth * max})
+            }
+          }
         }
       }
     }
@@ -81,21 +103,18 @@ const Slider = ({max, min, value, setValue}) => {
       window.removeEventListener("mousedown", handleMouseDown)
       window.removeEventListener("mouseup", handleMouseUp)
     }
+  }, [buttonClicked1, buttonClicked2, buttonPosition1, buttonPosition2, max, setValue, sliderWidth, value])
 
-
-  }, [handleMouseMove, max, setValue, value])
-
+  /* Initialize button positions to value prop*/
   useEffect(() => {
-    if(sliderRef?.current?.clientWidth) {
-      if(typeof value === "number") {
-        setButtonPosition1(sliderRef?.current?.clientWidth * (value / max));
-      }
-      else {
-        setButtonPosition1(sliderRef?.current?.clientWidth * (value.min / max));
-        setButtonPosition2(sliderRef?.current?.clientWidth * (value.max / max));
-      }
+    if(typeof value === "number") {
+      setButtonPosition1(sliderWidth * (value / max));
     }
-  }, [max, value])
+    else {
+      setButtonPosition1(sliderWidth * (value.min / max));
+      setButtonPosition2(sliderWidth * (value.max / max));
+    }
+  }, [max, sliderWidth, value])
 
   return (
     <div className={'px-2 mx-4 my-8'}>
