@@ -297,7 +297,7 @@ const Listing = ({id}) => {
                   }
                   { data?.listing.cancellation_policy &&
                     <div>
-                      <h3 className={'flex items-center font-bold py-2'}><BsCalendarMonth className={'mr-2'}/>Cancellation Policy:&nbsp;<span className={'capitalize '}>{ data?.listing.cancellation_policy}</span></h3>
+                      <h3 className={'flex items-center font-bold py-2'}><BsCalendarMonth className={'mr-2'}/>Cancellation Policy:&nbsp;<span className={'capitalize '}>{ data?.listing.cancellation_policy === "strict_14_with_grace_period" ? "14 Days" : data?.listing.cancellation_policy}</span></h3>
                     </div>
                   }
                 </section>
@@ -437,27 +437,31 @@ const Listing = ({id}) => {
                 </Popover>
 
                 <button className={'py-2 px-4 rounded-xl bg-primary text-light w-full mb-4'}>Reserve</button>
-                <div className={'flex justify-between w-full'}>
-                  <span>${data?.listing.price} x {nights}</span>
-                  <span>${data?.listing.price * nights}</span>
-                </div>
-                <div className={'flex justify-between w-full'}>
-                  <span>Cleaning Fee</span>
-                  <span>${data?.listing.cleaning_fee}</span>
-                </div>
-                <div className={'flex justify-between w-full'}>
-                  <span>Security Deposit</span>
-                  <span>${data?.listing.security_deposit}</span>
-                </div>
-                { guests.adults + guests.children > data?.listing.guests_included ?
+                { dates.startDate && dates.endDate ?
+                  <>
                   <div className={'flex justify-between w-full'}>
-                    <span>Extra Guests</span>
-                    <span>${data?.listing.extra_people}</span>
+                    <span>${data?.listing.price} x {nights}</span>
+                    <span>${data?.listing.price * nights}</span>
                   </div>
-                  : null
+                  <div className={'flex justify-between w-full'}>
+                    <span>Cleaning Fee</span>
+                    <span>${data?.listing.cleaning_fee}</span>
+                  </div>
+                  <div className={'flex justify-between w-full'}>
+                    <span>Security Deposit</span>
+                    <span>${data?.listing.security_deposit}</span>
+                  </div>
+                  { guests.adults + guests.children > data?.listing.guests_included ?
+                    <div className={'flex justify-between w-full'}>
+                      <span>Extra Guests</span>
+                      <span>${data?.listing.extra_people}</span>
+                    </div>
+                    : null
+                  }
+                  </>
+                  :
+                  null
                 }
-
-
               </div>
             </div>
 

@@ -2,109 +2,16 @@ import Head from 'next/head'
 import Image from 'next/image'
 
 import { gql, useQuery } from '@apollo/client'
-import {createRef, useCallback, useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useBottomScrollListener} from "react-bottom-scroll-listener";
 import {StarIcon} from "@heroicons/react/20/solid";
-import {HeartIcon} from "@heroicons/react/24/outline";
-import {BiBuildingHouse, BiHotel} from "react-icons/bi";
-import {BsBuilding, BsChevronLeft, BsChevronRight, BsHouseDoor, BsLadder} from "react-icons/bs";
-import { MdApartment, MdCabin, MdOutlineFreeBreakfast} from "react-icons/md";
-import {RiSailboatLine} from "react-icons/ri";
-import {GiBarn, GiBunkBeds, GiCampfire, GiCaravan, GiCastle, GiFarmTractor, GiTreehouse} from "react-icons/gi";
-import {IoEarthSharp} from "react-icons/io5";
+import {AiOutlineHeart, AiFillHeart} from "react-icons/ai"
 import Link from "next/link";
-import AccountMenu from "../components/AccountMenu";
-import useWindowDimensions from "../lib/useWindowDimensions"
 import Modal from "../components/Modal";
 import Slider from "../components/Slider";
-
-const icons = [
-  {
-    text: "Houses",
-    icon: BsHouseDoor,
-    type: "House"
-  },
-  {
-    icon: MdApartment,
-    text: "Apartments",
-    type: "Apartment"
-  },
-  {
-    icon: BsBuilding,
-    text: "Condos",
-    type: "Condominium",
-  },
-  {
-    icon: BiBuildingHouse,
-    text: "Guesthouses",
-    type: "Guesthouse",
-  },
-  {
-    icon: GiBunkBeds,
-    text: "Hostels",
-    type: "Hostel",
-  },
-  {
-    icon: BsLadder,
-    text: "Lofts",
-    type: "Loft"
-  },
-  {
-    icon: MdOutlineFreeBreakfast,
-    text: "B&B's",
-    type: "Bed and breakfast",
-  },
-  {
-    icon: BiHotel,
-    text: "Hotels",
-    type: "Hotel"
-  },
-  {
-    icon: MdCabin,
-    text: "Cabins",
-    type: "Cabin",
-  },
-  {
-    icon: GiFarmTractor,
-    text: "Farms",
-    type: "Farm stay",
-  },
-  {
-    icon: RiSailboatLine,
-    text: "Boats",
-    type: "Boat"
-  },
-  {
-    icon: GiCastle,
-    text: "Castles",
-    type: "Castle",
-  },
-  {
-    icon: GiCampfire,
-    text: "Campsites",
-    type: "Campsite"
-  },
-  {
-    icon: GiBarn,
-    text: "Barns",
-    type: "Barn",
-  },
-  {
-    icon: GiCaravan,
-    text: "Camper",
-    type: "Camper/RV"
-  },
-  {
-    icon: GiTreehouse,
-    text: "Tree Houses",
-    type:"Treehouse"
-  },
-  {
-    icon: IoEarthSharp,
-    text: "Earth Houses",
-    type: "Earth house"
-  }
-]
+import PropertyTypeFilter from '../components/PropertyTypeFilter';
+import {useList} from "../context/ListContext";
+import NavBar from "../components/NavBar";
 
 const GetListings = gql`
   query GetListing($first: Int, $after: String, $query: ListingInput) {
@@ -142,9 +49,15 @@ export default function Home() {
   })
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showLoadingPopup, setShowLoadingPopup] = useState(false);
-
+  const [sliderValue, setSliderValue] = useState({min: 0, max: 50.00})
+  const [sliderNumValue, setSliderNumValue] = useState(50)
+  const {dispatch, state} = useList();
 
   const { endCursor, hasNextPage } = data?.listings.pageInfo || {};
+
+  useEffect(() => {
+    console.log(data)
+  }, [data])
 
   const handleOnDocumentBottom = useCallback(() => {
     if(hasNextPage) {
@@ -182,14 +95,15 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <header className={'sticky top-0 z-10 bg-white  shadow-lg'}>
-        <div className={`flex justify-between items-center px-4`}>
-          <Link href={'/'} className={'px-4 py-2 bg-primary text-light my-2 rounded-3xl'}>SkyBnB</Link>
+      <header className={'sticky top-0 z-10 bg-white shadow-lg'}>
+        <NavBar>
           <button
             onClick={() => setShowFilterModal(true)}
-            className={'rounded-3xl px-6 py-2 border border-dark shadow-md opacity-70 hover:opacity-100'}>Filter</button>
-          <AccountMenu/>
-        </div>
+            className={'rounded-3xl px-6 py-2 border border-dark shadow-md opacity-70 hover:opacity-100'}
+          >
+            Filter
+          </button>
+        </NavBar>
         <hr/>
       <PropertyTypeFilter onFilterSelect={handlePropertyClick}/>
       </header>
@@ -203,36 +117,46 @@ export default function Home() {
         </div>
       }
 
-      <SliderTest/>
-
       <div className={'grid mx-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4'}>
         {data?.listings.edges.map((listing) =>
-          <Link href={`/rooms/${listing.node.id}`} key={listing.node.id} className={'relative w-full h-full max-w-[350px] m-auto'}>
-            <div className={'aspect-square '}>
-              <Image className={'rounded-md w-full h-full object-cover'} src={listing.node.images.picture_url} width={500} height={500}
-                     alt={''}/>
-            </div>
-            <HeartIcon className={'w-6 h-6 absolute top-4 right-4'}/>
-            <div className={'flex justify-between items-center w-full'}>
-              <h2 className={'font-semibold overflow-ellipsis'}>
-                {listing.node.address.country === "United States" ? `${listing.node.address.street.split(",")[0]},${listing.node.address.street.split(",")[1]}` : `${listing.node.address.street.split(",")[0]},${listing.node.address.street.split(",")[2]}` }
-              </h2>
-              { listing.node.review_scores.review_scores_rating > 0 ?
-                <span className={'flex items-center'}>
-                  {(listing.node.review_scores.review_scores_rating / 100 * 5).toFixed(1)}
-                  <StarIcon className={'ml-1 w-4 h-4'}/>
-                </span>
-                :
-                <span className={'text-sm'}>No Reviews</span>
-              }
-            </div>
-            <p>{listing.node.property_type}</p>
-            <p>${listing.node.price}</p>
-          </Link>
+          <div key={listing.node.id} className={'relative'}>
+            <Link href={`/rooms/${listing.node.id}`} className={'relative w-full h-full max-w-[350px] m-auto'}>
+              <div className={'aspect-square '}>
+                <Image className={'rounded-md w-full h-full object-cover'} src={listing.node.images.picture_url} width={500} height={500}
+                       alt={''}/>
+              </div>
+              <div className={'flex justify-between items-center w-full'}>
+                <h2 className={'font-semibold overflow-ellipsis'}>
+                  {listing.node.address.country === "United States" ? `${listing.node.address.street.split(",")[0]},${listing.node.address.street.split(",")[1]}` : `${listing.node.address.street.split(",")[0]},${listing.node.address.street.split(",")[2]}` }
+                </h2>
+                { listing.node.review_scores.review_scores_rating > 0 ?
+                  <span className={'flex items-center'}>
+                    {(listing.node.review_scores.review_scores_rating / 100 * 5).toFixed(1)}
+                    <StarIcon className={'ml-1 w-4 h-4'}/>
+                  </span>
+                  :
+                  <span className={'text-sm'}>No Reviews</span>
+                }
+              </div>
+              <p>{listing.node.property_type}</p>
+              <p>${listing.node.price}</p>
+            </Link>
+
+            { state.list.includes(listing.node.id) ?
+              <button onClick={() => dispatch({type: "remove", payload: listing.node.id})}>
+                <AiFillHeart className={'w-6 h-6 absolute top-4 right-4 text-primary'}/>
+              </button>
+              :
+              <button onClick={() => dispatch({type: "add", payload: listing.node.id})}>
+                <AiOutlineHeart className={'w-6 h-6 absolute top-4 right-4 ' }/>
+              </button>
+            }
+
+          </div>
         )}
       </div>
       <Modal show={showFilterModal} onClose={() => setShowFilterModal(false)} title={'Filters'}>
-
+        <FilterModal/>
       </Modal>
       { showLoadingPopup &&
         <div className={'fixed bottom-4 flex justify-center w-full'}>
@@ -243,109 +167,23 @@ export default function Home() {
   )
 }
 
-const PropertyTypeFilter = ({onFilterSelect}) => {
-  const [scrollCount, setScrollCount] = useState(0);
-  const [refs, setRefs] = useState([]);
-  const [lastDirection, setLastDirection] = useState("none");
-  const dimensions = useWindowDimensions();
+const FilterModal = () => {
+  const [sliderValue, setSliderValue] = useState({min: 0, max: 50.00})
+  const [sliderNumValue, setSliderNumValue] = useState(50)
 
   useEffect(() => {
-    // add or remove refs
-    setRefs((refs) =>
-      Array(icons.length)
-        .fill(0)
-        .map((_, i) => refs[i] || createRef()),
-    );
-  }, []);
-
-  const handlePropertyScrolled = (direction: String) => {
-    let shift;
-
-    if (direction === "left" && scrollCount > 0) {
-      if(lastDirection === "left") {
-        shift = -3;
-      } else {
-        shift = dimensions.width <= 700 ? -5 : -7;
-      }
-      setLastDirection("left");
-      // Prevent scrolling past beginning
-      if(scrollCount + shift < 0) {
-        refs[0].current.scrollIntoView();
-        setScrollCount(0);
-      }
-      else {
-        refs[scrollCount + shift].current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        setScrollCount(prevState => prevState + shift)
-      }
-    } else if (direction === "right") {
-      if (lastDirection === "none" || lastDirection === "left") {
-        shift = dimensions.width > 700 ? 5 : 7;
-      } else if (lastDirection === "right") {
-        shift = 3;
-      }
-      setLastDirection("right");
-      if(scrollCount + shift > refs.length - 3) {
-        refs[refs.length - 1].current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        setScrollCount(refs.length - 1);
-      } else {
-        refs[scrollCount + shift].current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        setScrollCount(prevState => prevState + shift)
-      }
-    }
-
-  }
-  const scrollDiv = useRef(null)
-
-  const handleTouchStart = (event) => {
-
-  }
-
-  return (
-    <div className={'flex relative'}>
-      <div onTouchStart={handleTouchStart}  className={`flex py-2 ${scrollCount > 3 ? 'pl-[58px]' : 'pl-4' } ${(scrollCount < refs.length - 4) ? 'pr-[58px]' : 'pr-4'} scroll-smooth overflow-hidden items-center gap-4 sm:gap-8 md:gap-12 bg-white relative transition-all`} ref={scrollDiv}>
-        {icons.map((icon, index) =>
-          <button
-            ref={refs[index]}
-            key={icon.text} onClick={() => onFilterSelect(icon.type)} className={'flex flex-col items-center opacity-70 hover:opacity-100'}>
-            <icon.icon className={'w-6 h-6'}/>
-            <span className={'text-sm'}>{icon.text}</span>
-          </button>
-        )}
-      </div>
-      {
-        (scrollCount > 3 && dimensions.width > 700 || scrollCount > 1 && dimensions.width <= 700) &&
-        <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center left-0'}>
-          <button onClick={() => handlePropertyScrolled("left")}
-                  className={'rounded-full border border-dark p-1 mx-2 md:mx-4 opacity-70 hover:opacity-100'}>
-            <BsChevronLeft/>
-          </button>
-        </div>
-      }
-      { (scrollCount < refs.length - 4 || scrollCount < refs.length - 3 && dimensions.width <= 700) &&
-        <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center right-0'}>
-          <button onClick={() => handlePropertyScrolled("right")}
-                  className={'rounded-full border border-dark p-1 mx-4 opacity-70 hover:opacity-100'}>
-            <BsChevronRight/>
-          </button>
-        </div>
-      }
-    </div>
-  )
-}
-
-const SliderTest = () => {
-  const [sliderValue, setSliderValue] = useState({min: 20, max: 80})
-  const [sliderNumValue, setSliderNumValue] = useState(30)
+    console.log("SliderTest", sliderNumValue)
+  }, [sliderNumValue])
 
   return (
     <>
-      <Slider min={0} max={100} value={sliderNumValue} setValue={setSliderNumValue}/>
+      <Slider min={20} max={50} value={sliderNumValue} setValue={setSliderNumValue} color={"bg-primary"}/>
 
       <div className={'m-4'}>
         {sliderNumValue.toFixed(0)}
       </div>
 
-      <Slider min={0} max={100} value={sliderValue} setValue={setSliderValue}/>
+      <Slider min={0} max={100} value={sliderValue} setValue={setSliderValue} color={"bg-primary"}/>
       <div className={'m-4'}>
         {sliderValue.min.toFixed(0)}, {sliderValue.max.toFixed(0)}
       </div>

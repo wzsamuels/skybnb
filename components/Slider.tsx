@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from "react";
 
-const Slider = ({max, min, value, setValue}) => {
+const Slider = ({max, min, value, setValue, step = 1, color = "bg-blue-500"}) => {
   const sliderRef = useRef<HTMLDivElement>();     // The whole slider bar
   const barRef = useRef<HTMLDivElement>();        // Just the colored part of the slider
   const buttonRef1 = useRef<HTMLButtonElement>();
@@ -14,7 +14,7 @@ const Slider = ({max, min, value, setValue}) => {
   useEffect(() => {
     console.log("width", sliderRef.current.clientWidth)
     setSliderWidth(sliderRef.current.clientWidth);
-  }, [])
+  }, [sliderRef?.current?.clientWidth])
 
   useEffect(() => {
     /*
@@ -25,21 +25,21 @@ const Slider = ({max, min, value, setValue}) => {
       if(buttonClicked1)  {
         // Check that the button isn't past the edges or the second button
         if(buttonPosition1 + event.movementX < sliderWidth && buttonPosition1 + event.movementX >= 0  && !(buttonPosition2 && buttonPosition1 + 5 + event.movementX > buttonPosition2)) {
-          setButtonPosition1(state => state + event.movementX)
+          setButtonPosition1(state => state + Math.round(event.movementX))
+          //let rounded = Math.round(((buttonPosition1 + event.movementX) / sliderWidth * max) * 100) / 100
+          let rounded = Math.round((buttonPosition1 + event.movementX) / sliderWidth * max)
+          console.log(rounded)
           if(typeof value === "number") {
-            setValue((buttonPosition1 + event.movementX) / sliderWidth * max)
+            setValue(rounded)
           } else {
             setValue({...value, min: (buttonPosition1 + event.movementX) / sliderWidth * max})
           }
         }
       } else if(buttonClicked2) {
         if(buttonPosition2 + event.movementX < sliderWidth && buttonPosition2 + event.movementX >= 0 && (buttonPosition2 + event.movementX - 5 > buttonPosition1)) {
-          setButtonPosition2(state => state + event.movementX)
-          if(typeof value === "number") {
-            setValue((buttonPosition2 + event.movementX) / sliderWidth * max)
-          } else {
-            setValue({...value, max: (buttonPosition2 + event.movementX) / sliderWidth * max});
-          }
+          setButtonPosition2(state => state + Math.round(event.movementX))
+          let rounded = Math.round((buttonPosition2 + Math.round(event.movementX)) / sliderWidth * max)
+          setValue({...value, max: rounded});
         }
       }
     }
@@ -114,25 +114,25 @@ const Slider = ({max, min, value, setValue}) => {
       setButtonPosition1(sliderWidth * (value.min / max));
       setButtonPosition2(sliderWidth * (value.max / max));
     }
-  }, [max, sliderWidth, value])
+  }, [sliderWidth])
 
   return (
     <div className={'px-2 mx-4 my-8'}>
       <div ref={sliderRef} className={'relative bg-gray-200 h-1 rounded flex items-center'}>
         { typeof value === "number" ?
           <>
-            <div ref={barRef} style={{width: `${buttonPosition1}px`}} className={'bg-blue-500 h-1 rounded'}></div>
-            <button ref={buttonRef1} style={{left: buttonPosition1}} className={'absolute -translate-x-2 h-4 w-4 bg-blue-500 rounded-full'}/>
+            <div ref={barRef} style={{width: `${buttonPosition1}px`}} className={`${color} h-1 rounded`}></div>
+            <button ref={buttonRef1} style={{left: buttonPosition1}} className={`${color} absolute -translate-x-2 h-4 w-4 rounded-full`}/>
           </>
           :
           <>
-            <div ref={barRef} style={{left: buttonPosition1, width: `${buttonPosition2 - buttonPosition1}px`}} className={'bg-blue-500 h-1 absolute'}></div>
-            <button  ref={buttonRef1} style={{left: buttonPosition1}} className={'absolute -translate-x-2 h-4 w-4 bg-blue-500 rounded-full'}/>
-            <button ref={buttonRef2} style={{left: buttonPosition2}} className={'absolute -translate-x-2 h-4 w-4 bg-blue-500 rounded-full'}/>
+            <div ref={barRef} style={{left: buttonPosition1, width: `${buttonPosition2 - buttonPosition1}px`}} className={`${color} h-1 absolute`}></div>
+            <button  ref={buttonRef1} style={{left: buttonPosition1}} className={`absolute -translate-x-2 h-4 w-4 ${color} rounded-full`}/>
+            <button ref={buttonRef2} style={{left: buttonPosition2}} className={`${color} absolute -translate-x-2 h-4 w-4  rounded-full`}/>
           </>
         }
       </div>
-      <div className={'flex justify-between text-sm'}>
+      <div className={'-ml-1 mt-1 flex justify-between text-sm -mr-3'}>
         <div>
           {min}
         </div>

@@ -1,4 +1,4 @@
-import {extendType, inputObjectType, intArg, nonNull, objectType, queryField, stringArg} from "nexus";
+import {extendType, inputObjectType, intArg, list, nonNull, objectType, queryField, stringArg} from "nexus";
 import {ListingAddress, ListingAddressInput} from "./ListingsAndReviewsAddress";
 import {ListingAvailability, ListingAvailabilityInput} from "./ListingsAndReviewsAvailability";
 import {ListingHost, ListingHostInput} from "./ListingsAndReviewsHost";
@@ -124,6 +124,72 @@ export const ListingQuery = queryField('listing', {
   }
 })
 
+export const ListingsByIdQuery = extendType({
+  type: 'Query',
+  definition(t) {
+    t.field('listingsById', {
+      type: 'Response',
+      args: {
+        first: intArg(),
+        after: stringArg(),
+        ids: nonNull((list('String')))
+      },
+      async resolve(_, args, ctx) {
+        let queryResults = null;
+        const takeCount = args.first ? args.first : 50;
+
+        const queryOptions = {
+          take: takeCount,
+          where: {
+            id: { in: args.ids },
+          }
+        }
+
+        if(args.after) {
+          queryResults = await ctx.prisma.listingsAndReviews.findMany({
+            skip: 1,
+            cursor: {
+              id: args.after,
+            },
+            ...queryOptions
+          })
+        } else {
+          queryResults = await ctx.prisma.listingsAndReviews.findMany({
+            ...queryOptions
+          })
+        }
+        if(queryResults.length > 0) {
+          const lastInResults = queryResults[queryResults.length - 1];
+          const cursor = lastInResults.id
+          const secondResults = await ctx.prisma.listingsAndReviews.findMany({
+            cursor: {
+              id: cursor
+            },
+            ...queryOptions
+          })
+          return {
+            pageInfo: {
+              endCursor: cursor,
+              hasNextPage: secondResults.length >= takeCount
+            },
+            edges: queryResults.map(listing => ({
+              cursor: listing.id,
+              node: listing
+            }))
+          }
+        }
+        return {
+          pageInfo: {
+            endCursor: null,
+            hasNextPage: false
+          },
+          edges: []
+        }
+      }
+    })
+  }
+})
+
 export const ListingsQuery = extendType({
   type: 'Query',
   definition(t) {
@@ -132,7 +198,9 @@ export const ListingsQuery = extendType({
       args: {
         first: intArg(),
         after: stringArg(),
-        query: ListingInput
+        query: ListingInput,
+        minPrice: intArg(),
+        maxPrice: intArg()
       },
       async resolve(_, args, ctx) {
         let queryResults = null;
@@ -152,7 +220,7 @@ export const ListingsQuery = extendType({
                   }
                 }
               }),
-              ...(args.query.property_type && { property_type: args.query.property_type}),
+              ...(args.query?.property_type && { property_type: args.query.property_type}),
             }
           }
         }

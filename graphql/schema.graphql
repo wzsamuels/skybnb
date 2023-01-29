@@ -245,7 +245,8 @@ type PageInfo {
 
 type Query {
   listing(query: ListingInput!): Listing
-  listings(after: String, first: Int, query: ListingInput): Response
+  listings(after: String, first: Int, maxPrice: Int, minPrice: Int, query: ListingInput): Response
+  listingsById(after: String, first: Int, ids: [String]!): Response
 }
 
 type Response {

@@ -4,6 +4,7 @@ import { ApolloProvider } from '@apollo/client'
 import apolloClient from '../lib/apollo'
 import {useEffect} from "react";
 import {UserProvider} from "@auth0/nextjs-auth0/client";
+import {ListProvider} from "../context/ListContext";
 
 export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
@@ -17,7 +18,9 @@ export default function App({ Component, pageProps }: AppProps) {
       <ApolloProvider client={apolloClient}>
         <div className={'text-dark bg-white min-h-[100vh] max-w-full relative '}>
           <div>
-            <Component {...pageProps} />
+            <ListProvider>
+              <Component {...pageProps} />
+            </ListProvider>
           </div>
         </div>
       </ApolloProvider>

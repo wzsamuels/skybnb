@@ -95,11 +95,17 @@ const icons = [
   }
 ]
 
+type Direction = "left" | "right" | "none";
+
 const PropertyTypeFilter = ({onFilterSelect}) => {
   const [scrollCount, setScrollCount] = useState(0);
   const [refs, setRefs] = useState([]);
-  const [lastDirection, setLastDirection] = useState("none");
+  const [lastDirection, setLastDirection] = useState<Direction>("none");
   const dimensions = useWindowDimensions();
+
+  const BREAKPOINT = 700;
+  const SM_SHIFT = 7;
+  const LG_SHIFT = 9;
 
   useEffect(() => {
     // add or remove refs
@@ -110,14 +116,13 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
     );
   }, []);
 
-  const handlePropertyScrolled = (direction: String) => {
+  const handlePropertyScrolled = (direction: Direction) => {
     let shift;
-
     if (direction === "left" && scrollCount > 0) {
       if(lastDirection === "left") {
         shift = -3;
       } else {
-        shift = dimensions.width <= 700 ? -5 : -7;
+        shift = dimensions.width <= BREAKPOINT ? -7 : -9;
       }
       setLastDirection("left");
       // Prevent scrolling past beginning
@@ -131,7 +136,7 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
       }
     } else if (direction === "right") {
       if (lastDirection === "none" || lastDirection === "left") {
-        shift = dimensions.width > 700 ? 5 : 7;
+        shift = dimensions.width > BREAKPOINT ? 9 : 7;
       } else if (lastDirection === "right") {
         shift = 3;
       }
@@ -144,39 +149,40 @@ const PropertyTypeFilter = ({onFilterSelect}) => {
         setScrollCount(prevState => prevState + shift)
       }
     }
-
   }
   const scrollDiv = useRef(null)
-
 
   return (
     <div className={'flex relative'}>
       <div className={`flex py-2 ${scrollCount > 3 ? 'pl-[58px]' : 'pl-4' } ${(scrollCount < refs.length - 4) ? 'pr-[58px]' : 'pr-4'} scroll-smooth overflow-hidden items-center gap-4 sm:gap-8 md:gap-12 bg-white relative transition-all`} ref={scrollDiv}>
-      {icons.map((icon, index) =>
+        { icons.map((icon, index) =>
           <button
             ref={refs[index]}
-        key={icon.text} onClick={() => onFilterSelect(icon.type)} className={'flex flex-col items-center opacity-70 hover:opacity-100'}>
-    <icon.icon className={'w-6 h-6'}/>
-    <span className={'text-sm'}>{icon.text}</span>
-      </button>
-  )}
-    </div>
-    {
-      (scrollCount > 3 && dimensions.width > 700 || scrollCount > 1 && dimensions.width <= 700) &&
-      <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center left-0'}>
-      <button onClick={() => handlePropertyScrolled("left")}
-      className={'rounded-full border border-dark p-1 mx-2 md:mx-4 opacity-70 hover:opacity-100'}>
-        <BsChevronLeft/>
+            key={icon.text}
+            onClick={() => onFilterSelect(icon.type)}
+            className={'flex flex-col items-center opacity-70 hover:opacity-100'}
+          >
+            <icon.icon className={'w-6 h-6'}/>
+            <span className={'text-sm'}>{icon.text}</span>
+          </button>
+        )}
+      </div>
+      {
+        (scrollCount > 3 && dimensions.width > BREAKPOINT || scrollCount > 1 && dimensions.width <= BREAKPOINT) &&
+        <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center left-0'}>
+        <button onClick={() => handlePropertyScrolled("left")}
+        className={'rounded-full border border-dark p-1 mx-2 md:mx-4 opacity-70 hover:opacity-100'}>
+          <BsChevronLeft/>
+          </button>
+          </div>
+      }
+      { (scrollCount < refs.length - 4 || scrollCount < refs.length - 3 && dimensions.width <= BREAKPOINT) &&
+      <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center right-0'}>
+        <button onClick={() => handlePropertyScrolled("right")}
+          className={'rounded-full border border-dark p-1 mx-4 opacity-70 hover:opacity-100'}>
+          <BsChevronRight/>
         </button>
-        </div>
-    }
-    { (scrollCount < refs.length - 4 || scrollCount < refs.length - 3 && dimensions.width <= 700) &&
-    <div className={'absolute w-auto h-full bg-white z-20 flex justify-end items-center right-0'}>
-    <button onClick={() => handlePropertyScrolled("right")}
-      className={'rounded-full border border-dark p-1 mx-4 opacity-70 hover:opacity-100'}>
-        <BsChevronRight/>
-        </button>
-        </div>
+      </div>
     }
     </div>
   )
