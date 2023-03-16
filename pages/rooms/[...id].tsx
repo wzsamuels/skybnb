@@ -13,7 +13,7 @@ import {MdCable, MdEventAvailable, MdKitchen, MdLuggage, MdOutlineBedroomChild, 
   MdOutlineCoffeeMaker, MdOutlineDry, MdOutlineFreeBreakfast, MdOutlineIron, MdOutlineLocalLaundryService,
   MdOutlineMicrowave, MdOutlineMiscellaneousServices, MdOutlinePrivacyTip, MdOutlineToys, MdPets, MdPool, MdSmokingRooms,
   MdWbShade } from "react-icons/md"
-import {BiAlarmExclamation, BiBed, BiFirstAid, BiPlus} from "react-icons/bi";
+import {BiAlarmExclamation, BiBed, BiFirstAid} from "react-icons/bi";
 import {CgSmartHomeRefrigerator, CgSmartHomeWashMachine} from "react-icons/cg"
 import {FiClock} from "react-icons/fi";
 import {RiAlarmWarningLine} from "react-icons/ri";
@@ -29,6 +29,8 @@ import {Popover} from "@headlessui/react";
 import Link from "next/link";
 import AccountMenu from "../../components/AccountMenu";
 import dayjs from "dayjs";
+import {useRouter} from "next/router";
+import Guests from "../../components/Guests";
 dayjs.extend(isBetween);
 
 const GetListing = gql`
@@ -112,7 +114,7 @@ export async function getServerSideProps(ctx: { params: { id: string; }; }) {
   };
 }
 
-const Listing = ({id}) => {
+const Listing = ({id, reservation, setReservation}) => {
 
   const [showNeighborhoodModal, setShowNeighborhoodModal] = useState(false);
   const openNeighborhoodModal = () => setShowNeighborhoodModal(true);
@@ -122,6 +124,10 @@ const Listing = ({id}) => {
   const openReviewDialog = () => setShowReviewDialog(true);
   const closeReviewDialog = () => setShowReviewDialog(false);
 
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const openCalendarModal = () => setShowCalendarModal(true);
+  const closeCalendarModal = () => setShowCalendarModal(false);
+
   const { data, error } = useQuery(GetListing,{variables: {query: {id}}});
   const [roomImages, setRoomImages] = useState(null);
   const [dates, setDates] = useState({startDate: null, endDate: null});
@@ -130,6 +136,9 @@ const Listing = ({id}) => {
   const amenities = data ? [...new Set(data?.listing.amenities)] : null;
 
   const nights = dates.endDate && dates.startDate ? dates.endDate.diff(dates.startDate, 'day') : null;
+
+  const [message, setMessage] = useState("");
+  const router = useRouter()
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -225,6 +234,23 @@ const Listing = ({id}) => {
         }
       </div>
     )
+  }
+
+  const handleReserve = () => {
+    if(guests.adults + guests.children === 0) {
+      setMessage("Select at least one guest.");
+      return;
+    }
+    if(!dates.startDate) {
+      setMessage("Select a start date.");
+      return;
+    }
+    if(!dates.endDate) {
+      setMessage("Select an end date.");
+      return;
+    }
+    setReservation({listing: data?.listing, guests: guests, dates: dates})
+    router.push('/checkout')
   }
 
   return (
@@ -362,72 +388,16 @@ const Listing = ({id}) => {
                 <Popover className={'relative'}>
                   {({open, close}) => (
                     <>
-                      <Popover.Button className={'mb-4 relative border border-black rounded-b-lg flex truncate w-full hover:border-2 pl-3 pr-12 pt-[26px] pb-[10px]'}>
+                      <Popover.Button className={'mb-4 relative border border-black rou nded-b-lg flex truncate w-full hover:border-2 pl-3 pr-12 pt-[26px] pb-[10px]'}>
                         <div className={'absolute uppercase top-2 left-[12px] text-xs'}>
                           Guests
                         </div>
                         <div className={'truncate'}>
-                          <span>{guests.adults + guests.children} guests{guests.infants ? `, ${guests.infants} infant${guests.infants > 1 ? 's' : ''}` : ``}</span><span></span>
+                          <span>{guests.adults + guests.children} guest{guests.adults + guests.children > 1 ? 's' : ''}{guests.infants ? `, ${guests.infants} infant${guests.infants > 1 ? 's' : ''}` : ``}</span><span></span>
                         </div>
                       </Popover.Button>
                       <Popover.Panel className={'absolute z-10 bg-white rounded shadow-full p-4 w-full min-w-[280px] right-0 top-14'}>
-                        <div className={'flex justify-between mb-4'}>
-                          <div>
-                            <div>Adults</div>
-                            <div className={'text-sm'}>Age 13+</div>
-                          </div>
-                          <div className={'flex items-center'}>
-                            <button
-                              onClick={() => setGuests({...guests, adults: guests.adults -1})}
-                              disabled={guests.adults === 0}
-                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><AiOutlineMinus className={'text-black'}/></button>
-                            <div className={'mx-2'}>{guests.adults}</div>
-                            <button
-                              onClick={() => setGuests({...guests, adults: guests.adults + 1})}
-                              disabled={guests.adults + guests.children === data?.listing.accommodates}
-                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><BiPlus/></button>
-                          </div>
-                        </div>
-
-                        <div className={'flex justify-between mb-4'}>
-                          <div>
-                            <div>Children</div>
-                            <div className={'text-sm'}>Ages 2-12</div>
-                          </div>
-                          <div className={'flex items-center'}>
-                            <button
-                              onClick={() => setGuests({...guests, children: guests.children - 1})}
-                              disabled={guests.children === 0}
-                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><AiOutlineMinus className={'text-black'}/></button>
-                            <div className={'mx-2'}>{guests.children}</div>
-                            <button
-                              onClick={() => setGuests({...guests, children: guests.children + 1})}
-                              disabled={guests.adults + guests.children === data?.listing.accommodates}
-                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><BiPlus/></button>
-                          </div>
-                        </div>
-
-                        <div className={'flex justify-between mb-4'}>
-                          <div>
-                            <div>Infants</div>
-                            <div className={'text-sm'}>Under 2</div>
-                          </div>
-                          <div className={'flex items-center'}>
-                            <button
-                              onClick={() => setGuests({...guests, infants: guests.infants - 1})}
-                              disabled={guests.infants === 0}
-                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><AiOutlineMinus className={'text-black'}/></button>
-                            <div className={'mx-2'}>{guests.infants}</div>
-                            <button
-                              onClick={() => setGuests({...guests, infants: guests.infants + 1})}
-                              disabled={guests.infants === 5}
-                              className={'rounded-full border border-black disabled:opacity-20 p-1'}><BiPlus/></button>
-                          </div>
-                        </div>
-
-                        <div className={'text-sm mb-4'}>
-                          This place has a maximum of {data?.listing.accommodates} guests, not including infants.
-                        </div>
+                        <Guests guests={guests} setGuests={setGuests} accommodates={data?.listing.accommodates}/>
                         <div className={'w-full flex justify-end'}>
                           <button onClick={close} className={'underline'}>Close</button>
                         </div>
@@ -436,35 +406,54 @@ const Listing = ({id}) => {
                   )}
                 </Popover>
 
-                <button className={'py-2 px-4 rounded-xl bg-primary text-light w-full mb-4'}>Reserve</button>
+                { message &&
+                  <div className={'mb-2 text-red-600'}>
+                    {message}
+                  </div>
+                }
+
+                <button
+                  className={'py-2 px-4 rounded-xl bg-primary text-light w-full mb-4'}
+                  onClick={() => {dates.endDate && dates.startDate ? handleReserve() : openCalendarModal() }}
+                >
+                  {dates.endDate && dates.startDate ? "Reserve" : "Check Availability"}
+                </button>
+
+                {/* Provide pricing information if start and end dates are selected  */}
                 { dates.startDate && dates.endDate ?
                   <>
-                  <div className={'flex justify-between w-full'}>
-                    <span>${data?.listing.price} x {nights}</span>
-                    <span>${data?.listing.price * nights}</span>
-                  </div>
-                  <div className={'flex justify-between w-full'}>
-                    <span>Cleaning Fee</span>
-                    <span>${data?.listing.cleaning_fee}</span>
-                  </div>
-                  <div className={'flex justify-between w-full'}>
-                    <span>Security Deposit</span>
-                    <span>${data?.listing.security_deposit}</span>
-                  </div>
-                  { guests.adults + guests.children > data?.listing.guests_included ?
                     <div className={'flex justify-between w-full'}>
-                      <span>Extra Guests</span>
-                      <span>${data?.listing.extra_people}</span>
+                      <span>${data?.listing.price} x {nights}</span>
+                      <span>${data?.listing.price * nights}</span>
                     </div>
-                    : null
-                  }
+
+                    { data?.listing.cleaning_fee &&
+                      <div className={'flex justify-between w-full mt-2'}>
+                        <span>Cleaning Fee</span>
+                        <span>${data?.listing.cleaning_fee}</span>
+                      </div>
+                    }
+
+                    { data?.listing.security_deposit &&
+                      <div className={'flex justify-between w-full mt-2'}>
+                        <span>Security Deposit</span>
+                        <span>${data?.listing.security_deposit}</span>
+                      </div>
+                    }
+
+                    { guests.adults + guests.children > data?.listing.guests_included ?
+                      <div className={'flex justify-between w-full mt-2'}>
+                        <span>Extra Guests</span>
+                        <span>${data?.listing.extra_people}</span>
+                      </div>
+                      : null
+                    }
                   </>
                   :
                   null
                 }
               </div>
             </div>
-
           </div>
 
           {/*Review Section*/}
@@ -507,6 +496,7 @@ const Listing = ({id}) => {
             </section>
           }
 
+          {/* Location Information */}
           <section className={'border-t border-gray-300 py-6 md:py-8'}>
             <h2 className={'text-xl my-4'}>Where you&apos;ll be</h2>
             <GoogleMap lat={data?.listing.address.location.coordinates[1]} lang={data?.listing.address.location.coordinates[0]}/>
@@ -517,9 +507,9 @@ const Listing = ({id}) => {
                 <button onClick={openNeighborhoodModal} className={'underline my-4'}>Learn More</button>
               </>
             }
-
           </section>
 
+          {/* Host Information */}
           <section className={'border-t border-gray-300 py-6 md:py-8'}>
             <div className={'flex flex-row w-full justify-between md:justify-end md:flex-row-reverse'}>
               <div>
@@ -558,7 +548,7 @@ const Listing = ({id}) => {
           <div>
             <span className={'font-bold'}>${data?.listing.price} </span><span>night</span>
             { dates.startDate && dates.endDate ?
-              <div className={'underline'}>
+              <div className={'underline hover:cursor-pointer'} onClick={openCalendarModal}>
                 {dates.startDate.format("MMM D")} - {dates.endDate.format("MMM D")}
               </div>
               :
@@ -568,8 +558,17 @@ const Listing = ({id}) => {
             }
           </div>
         </div>
-        <button className={'bg-primary text-white rounded-lg py-2 px-4'}>Reserve</button>
+        <button
+          className={'bg-primary text-white rounded-lg py-2 px-4'}
+          onClick={() => { dates.endDate && dates.startDate ? handleReserve() : openCalendarModal()}}
+        >
+          { dates.endDate && dates.startDate ? "Reserve" : "Check Availability" }
+        </button>
       </div>
+
+      <Modal show={showCalendarModal} onClose={closeCalendarModal} title={"Select Dates"}>
+        <Calendar dates={dates} setDates={setDates} onClose={closeCalendarModal}/>
+      </Modal>
 
       {/*Review Modal*/}
       <Modal show={showReviewDialog} onClose={closeReviewDialog} title={"Reviews"}>
@@ -611,7 +610,9 @@ const Listing = ({id}) => {
   )
 }
 
+const ReserveButton = ({dates}) => {
 
+}
 
 const Description = ({listing}) => {
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
@@ -675,7 +676,7 @@ const Amenities = ({amenities}) => {
           <ul className={'grid grid-cols-2 gap-2'}>
             { amenities.map((item, index) => {
               if(index < 8) {
-                let Icon = getIcon(item);
+                let Icon = AmenityIcon(item);
                 if (Icon) {
                   return <li className={'flex'} key={item}><Icon className={'w-6 h-6'}/>{item}</li>
                 }
@@ -691,7 +692,7 @@ const Amenities = ({amenities}) => {
           <Modal show={showAmenityModal} onClose={closeAmenityModal} title={'Amenities'} className={'w-[780px]'}>
             <ul className={''}>
               { amenities.map((item) => {
-                let Icon = getIcon(item);
+                let Icon = AmenityIcon(item);
                 if (Icon) {
                   return <li className={'flex py-6 border-gray-300 border-b'} key={item}><Icon className={'w-6 h-6 mr-4'}/>{item}</li>
                 }
@@ -702,11 +703,11 @@ const Amenities = ({amenities}) => {
         </section>
       }
     </>
-
   )
 }
 
-const getIcon = (amenity = "") => {
+const AmenityIcon = (amenity = "") => {
+
   if(amenity.includes("translation missing")) {
     return null;
   }
