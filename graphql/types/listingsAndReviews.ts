@@ -211,6 +211,9 @@ export const ListingsQuery = extendType({
           queryOptions = {
             take: takeCount,
             where : {
+              price: {
+                lte: 100
+              },
               ...(args.query.id && { id: args.query.id}),
               ...(args.query.address && {
                 address: {
@@ -220,12 +223,30 @@ export const ListingsQuery = extendType({
                   }
                 }
               }),
+              ...((args.minPrice || args.maxPrice) && {
+                price:
+                  {
+                    ...(args.maxPrice && { lte: (args.maxPrice === 1200 ? 50000 : args.maxPrice) }),
+                    ...(args.minPrice && { gte: args.minPrice }),
+                  }
+              }),
               ...(args.query?.property_type && { property_type: args.query.property_type}),
             }
-          }
+          };
         }
         else {
-          queryOptions = { take: args.first ? args.first : 50 };
+          queryOptions = {
+            take: args.first ? args.first : 50,
+            where: {
+              ...((args.minPrice || args.maxPrice) && {
+                price:
+                  {
+                    ...(args.maxPrice && { lte: (args.maxPrice === 1200 ? 50000 : args.maxPrice) }),
+                    ...(args.minPrice && { gte: args.minPrice}),
+                  }
+              }),
+            }
+          };
         }
 
         if(args.after) {
