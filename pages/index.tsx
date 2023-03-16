@@ -14,8 +14,8 @@ import {useList} from "../context/ListContext";
 import NavBar from "../components/NavBar";
 
 const GetListings = gql`
-  query GetListing($first: Int, $after: String, $query: ListingInput) {
-    listings(first: $first, after: $after, query: $query) {
+  query GetListing($first: Int, $after: String, $query: ListingInput, $maxPrice: Int, $minPrice: Int) {
+    listings(first: $first, after: $after, query: $query, maxPrice: $maxPrice, minPrice: $minPrice) {
       pageInfo {
         endCursor
         hasNextPage
@@ -43,9 +43,15 @@ const GetListings = gql`
 `
 
 export default function Home() {
-  const [filter, setFilter] = useState({});
+  const [filter, setFilter] = useState({minPrice: 0, maxPrice: 10000});
+  const [query, setQuery] = useState({});
   const {data, loading, error, fetchMore} = useQuery(GetListings, {
-    variables: {first: 20, query: filter}
+    variables: {
+      first: 20,
+      query: query,
+      maxPrice: filter.maxPrice,
+      minPrice: filter.minPrice
+    }
   })
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showLoadingPopup, setShowLoadingPopup] = useState(false);
@@ -59,7 +65,7 @@ export default function Home() {
     console.log(data)
   }, [data])
 
-  const handleOnDocumentBottom = useCallback(() => {
+  const handleOnDocumentBottom = useCallback(() => {7
     if(hasNextPage) {
       setShowLoadingPopup(true);
       fetchMore({
@@ -81,7 +87,7 @@ export default function Home() {
   useBottomScrollListener(handleOnDocumentBottom);
 
   const handlePropertyClick = (type: String) => {
-    setFilter({...filter, property_type: type});
+    setQuery({...query, property_type: type});
 
   }
 
@@ -156,7 +162,7 @@ export default function Home() {
         )}
       </div>
       <Modal show={showFilterModal} onClose={() => setShowFilterModal(false)} title={'Filters'}>
-        <FilterModal/>
+        <FilterModal setFilter={setFilter} onClose={() => setShowFilterModal(false)}/>
       </Modal>
       { showLoadingPopup &&
         <div className={'fixed bottom-4 flex justify-center w-full'}>
@@ -167,26 +173,28 @@ export default function Home() {
   )
 }
 
-const FilterModal = () => {
-  const [sliderValue, setSliderValue] = useState({min: 0, max: 50.00})
-  const [sliderNumValue, setSliderNumValue] = useState(50)
+const FilterModal = ({setFilter, onClose}) => {
+  const [sliderValue, setSliderValue] = useState({min: 0, max: 1000})
 
-  useEffect(() => {
-    console.log("SliderTest", sliderNumValue)
-  }, [sliderNumValue])
+  const handleFilterSubmit = () => {
+    setFilter(state => { return {...state, minPrice: Math.round(sliderValue.min), maxPrice: Math.round(sliderValue.max)}})
+    onClose()
+  }
 
   return (
-    <>
-      <Slider min={20} max={50} value={sliderNumValue} setValue={setSliderNumValue} color={"bg-primary"}/>
+    <div className={'flex flex-col items-center'}>
 
-      <div className={'m-4'}>
-        {sliderNumValue.toFixed(0)}
+      <div className={'w-full'}>
+        <h1>Price Range</h1>
+        <Slider min={0} max={1000} value={sliderValue} setValue={setSliderValue} color={"bg-primary"}/>
+        <div className={'m-4'}>
+          ${sliderValue.min.toFixed(0)} - ${sliderValue.max.toFixed(0)}
+        </div>
       </div>
 
-      <Slider min={0} max={100} value={sliderValue} setValue={setSliderValue} color={"bg-primary"}/>
-      <div className={'m-4'}>
-        {sliderValue.min.toFixed(0)}, {sliderValue.max.toFixed(0)}
-      </div>
-    </>
+      <button onClick={handleFilterSubmit}>
+        Search
+      </button>
+    </div>
   )
 }
