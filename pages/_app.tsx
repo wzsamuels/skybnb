@@ -18,13 +18,11 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <UserProvider>
       <ApolloProvider client={apolloClient}>
-        <div className={'text-dark bg-white min-h-[100vh] max-w-full relative '}>
-          <div>
-            <ListProvider>
-              <Component {...pageProps} reservation={reservation} setReservation={setReservation}/>
-            </ListProvider>
+        <ListProvider>
+          <div className={'text-dark bg-white min-h-[100vh] max-w-full relative '}>
+            <Component {...pageProps} reservation={reservation} setReservation={setReservation}/>
           </div>
-        </div>
+        </ListProvider>
       </ApolloProvider>
     </UserProvider>
   )
