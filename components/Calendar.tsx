@@ -133,9 +133,14 @@ const Calendar = ({dates, setDates, onClose} : Props) => {
     <>
 
       <div className={'relative'}>
-        {dates.startDate && dates.endDate ?
-          <div>{dates.startDate.format('MMMM D, YYYY')} - {dates.endDate.format('MMMM D, YYYY')}</div> : null}
-        <div className={'flex justify-between my-4 absolute top-0 w-full px-2'}>
+        <div className={'my-1'}>
+          { dates.startDate && dates.endDate ?
+            `${dates.startDate.format('MMMM D, YYYY')} - ${dates.endDate.format('MMMM D, YYYY')}`
+            :
+            `Add your travel dates`
+          }
+        </div>
+        <div className={'flex justify-between my-4 absolute top-7 w-full px-2'}>
           <button className={'disabled:opacity-20'} onClick={handleLeftButton} disabled={selectedDate.month() === currentDate.month() && selectedDate.year() === currentDate.year()}><FiChevronLeft className={'w-6 h-6'}/></button>
           <button onClick={handleRightButton}><FiChevronRight className={'w-6 h-6'} /></button>
         </div>
