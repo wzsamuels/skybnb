@@ -5,7 +5,7 @@ import Link from "next/link";
 import AccountMenu from "../components/AccountMenu";
 
 const Checkout = ({reservation, setReservation}) => {
-  const nights = reservation.dates.endDate && reservation.dates.startDate ? reservation.dates.endDate.diff(reservation.dates.startDate, 'day') : null;
+  const nights = reservation?.dates?.endDate && reservation?.dates?.startDate ? reservation.dates.endDate.diff(reservation.dates.startDate, 'day') : null;
   const [message, setMessage] = useState("");
   console.log(reservation)
 
