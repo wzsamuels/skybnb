@@ -61,21 +61,21 @@ const Checkout = ({reservation, setReservation}) => {
           <section>
             <h2>Trip Price</h2>
             <div className={'flex justify-between w-full'}>
-              <span>${reservation?.listing.price} x {nights} nights</span>
-              <span>${reservation?.listing.price * nights}</span>
+              <span>${reservation?.listing?.price} x {nights} nights</span>
+              <span>${reservation?.listing?.price * nights}</span>
             </div>
 
-            { reservation?.listing.cleaning_fee &&
+            { reservation?.listing?.cleaning_fee &&
               <div className={'flex justify-between w-full mt-2'}>
                 <span>Cleaning Fee</span>
-                <span>${reservation?.listing.cleaning_fee}</span>
+                <span>${reservation?.listing?.cleaning_fee}</span>
               </div>
             }
 
-            { reservation?.listing.security_deposit &&
+            { reservation?.listing?.security_deposit &&
               <div className={'flex justify-between w-full mt-2'}>
                 <span>Security Deposit</span>
-                <span>${reservation?.listing.security_deposit}</span>
+                <span>${reservation?.listing?.security_deposit}</span>
               </div>
             }
 
