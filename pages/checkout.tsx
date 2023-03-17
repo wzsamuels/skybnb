@@ -47,8 +47,8 @@ const Checkout = ({reservation, setReservation}) => {
             <div>{reservation?.dates?.startDate.format('MMM D')} - {reservation?.dates?.endDate.format('MMM D')}</div>
 
             <h3 className={' font-bold my-2'}>Guests</h3>
-            {reservation.guests.adults + reservation.guests.children} guest{reservation.guests.adults + reservation.guests.children > 1 ? 's' : ''}
-            {reservation.guests.infants ? `, ${reservation.guests.infants} infant${reservation.guests.infants > 1 ? 's' : ''}` : ``}
+            {reservation?.guests?.adults + reservation?.guests?.children} guest{reservation?.guests?.adults + reservation?.guests?.children > 1 ? 's' : ''}
+            {reservation?.guests?.infants ? `, ${reservation?.guests?.infants} infant${reservation?.guests?.infants > 1 ? 's' : ''}` : ``}
           </section>
 
           <hr className={'my-2'}/>
@@ -79,7 +79,7 @@ const Checkout = ({reservation, setReservation}) => {
               </div>
             }
 
-            { reservation.guests.adults + reservation.guests.children > reservation?.listing.guests_included ?
+            { reservation?.guests?.adults + reservation?.guests?.children > reservation?.listing?.guests_included ?
               <div className={'flex justify-between w-full mt-2'}>
                 <span>Extra Guests</span>
                 <span>${reservation?.listing.extra_people}</span>
