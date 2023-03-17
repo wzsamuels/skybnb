@@ -44,7 +44,7 @@ const Checkout = ({reservation, setReservation}) => {
           <section className={'my-4'}>
             <h2 className={'text-xl md:text-2xl my-2 font-bold'}>Trip Details</h2>
             <h3 className={'font-bold my-2'}>Dates</h3>
-            <div>{reservation.dates.startDate.format('MMM D')} - {reservation.dates.endDate.format('MMM D')}</div>
+            <div>{reservation?.dates?.startDate.format('MMM D')} - {reservation?.dates?.endDate.format('MMM D')}</div>
 
             <h3 className={' font-bold my-2'}>Guests</h3>
             {reservation.guests.adults + reservation.guests.children} guest{reservation.guests.adults + reservation.guests.children > 1 ? 's' : ''}
