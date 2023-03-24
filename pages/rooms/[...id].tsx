@@ -299,7 +299,7 @@ const Listing = ({id, reservation, setReservation}) => {
                     {data?.listing.bathrooms > 1 && "s"}</div>
                 </div>
                 <div className={'aspect-square'}>
-                  <Image className={'rounded-full'} src={'https://thispersondoesnotexist.com/image'} width={56} height={56} alt={'AI Generated Host Image'}/>
+                  <Image className={'rounded-full'} src={'https://i.pravatar.cc/52'} width={56} height={56} alt={'AI Generated Host Image'}/>
                 </div>
               </div>
 
@@ -475,7 +475,7 @@ const Listing = ({id, reservation, setReservation}) => {
                     { index < 6 &&
                       <li className={'my-2'}>
                         <div className={'flex mb-4'}>
-                          <Image className={'mr-2 rounded-full'} alt={''} width={52} height={52} src={`https://i.pravatar.cc/52?${index}`}/>
+                          <Image className={'mr-2 rounded-full'} alt={''} width={52} height={52} src={`https://i.pravatar.cc/52?${index+1}`}/>
                           <div>
                             <p className={'font-bold'}>{review.reviewer_name}</p>
                             <p>{`${(new Date(review.date)).getMonth()+1}/${(new Date(review.date)).getDay()+1}/${(new Date(review.date)).getFullYear()}`}</p>
@@ -520,7 +520,7 @@ const Listing = ({id, reservation, setReservation}) => {
                   null
                 }
               </div>
-              <Image className={'rounded-full  md:mr-4'} src={'https://thispersondoesnotexist.com/image'} width={64} height={64} alt={'AI Generated Host Image'}/>
+              <Image className={'rounded-full  md:mr-4'} src={'https://i.pravatar.cc/52'} width={64} height={64} alt={'AI Generated Host Image'}/>
             </div>
             <div className={'grid grid-cols-1 md:grid-cols-2 grid-rows-1 gap-4'}>
               { data?.listing.host.host_about &&
