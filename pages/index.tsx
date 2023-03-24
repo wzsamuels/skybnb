@@ -187,12 +187,12 @@ const FilterModal = ({setFilter, onClose}) => {
       <div className={'w-full'}>
         <h1>Price Range</h1>
         <Slider min={0} max={1000} value={sliderValue} setValue={setSliderValue} color={"bg-primary"}/>
-        <div className={'m-4'}>
+        <div className={'m-4 flex justify-center text-xl'}>
           ${sliderValue.min.toFixed(0)} - ${sliderValue.max.toFixed(0)}
         </div>
       </div>
 
-      <button onClick={handleFilterSubmit}>
+      <button className={'bg-red-600 px-4 py-2 text-white rounded-xl'} onClick={handleFilterSubmit}>
         Search
       </button>
     </div>
